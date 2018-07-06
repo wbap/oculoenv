@@ -1,2 +1,2 @@
-from oculoenv.content import PointToTargetContent
+from oculoenv.contents.point_to_target_content import PointToTargetContent
 from oculoenv.environment import Environment

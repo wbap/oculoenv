@@ -24,13 +24,8 @@ def save_img(img):
 
 
 def check_offscreen():
-  content = PointToTargetContent()
+  content = PointToTargetContent(target_size="small", use_lure=True, lure_size="large")
   env = Environment(content)
-
-  # 最初の28フレームがcontent画面に空白となってしまう現象
-  action = np.array([0.0, 0.0])
-  for i in range(28):
-    env.step(action)
 
   frame_size = 100
 
