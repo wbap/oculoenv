@@ -18,11 +18,11 @@ from .geom import Matrix4
 BG_COLOR = np.array([0.45, 0.82, 1.0, 1.0])
 WHITE_COLOR = np.array([1.0, 1.0, 1.0])
 
-CAMERA_FOV_Y = 50
+CAMERA_FOV_Y = 50 # Camera vertical field of view angle (degree)
 
-CAMERA_INITIAL_ANGLE_V = deg2rad(10.0)
-CAMERA_VERTICAL_ANGLE_MAX = deg2rad(45.0)
-CAMERA_HORIZONTAL_ANGLE_MAX = deg2rad(45.0)
+CAMERA_INITIAL_ANGLE_V = deg2rad(10.0)      # Initial vertical angle of camera (radian)
+CAMERA_VERTICAL_ANGLE_MAX = deg2rad(45.0)   # Max vertical angle of camera (radian)
+CAMERA_HORIZONTAL_ANGLE_MAX = deg2rad(45.0) # Max horizontal angle of camera (radian)
 
 PLANE_DISTANCE = 3.0 # Distance to content plane
 
@@ -166,7 +166,7 @@ class Environment(object):
     self.camera.reset()
     return self.render_offscreen()
 
-  
+
   def calc_local_focus_pos(self, camera_forward_v):
     """ Calculate local coordinate of view focus point on the content panel. """
     
@@ -180,8 +180,8 @@ class Environment(object):
 
 
   def step(self, action):
-    d_angle_v = action[0] * 0.1 # top-down angle
-    d_angle_h = action[1] * 0.1 # left-right angle
+    d_angle_v = action[0] # top-down angle
+    d_angle_h = action[1] # left-right angle
     self.camera.change_angle(d_angle_v, d_angle_h)
 
     camera_forward_v = self.camera.get_forward_vec()
@@ -259,9 +259,6 @@ class Environment(object):
 
 
   def render_sub(self, frame_buffer):
-    # Render panel content into frame buffer texture
-    self.content.render()
-    
     self.shadow_window.switch_to()
 
     frame_buffer.bind()

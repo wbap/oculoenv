@@ -21,16 +21,16 @@ def on_key_press(symbol, modifiers):
   action = None
   if symbol == key.LEFT:
     print('left')
-    action = np.array([0.00, 0.2])
+    action = np.array([0.00, 0.02])
   elif symbol == key.RIGHT:
     print('right')
-    action = np.array([0.00, -0.2])
+    action = np.array([0.00, -0.02])
   elif symbol == key.UP:
     print('up')
-    action = np.array([0.2, 0.00])
+    action = np.array([0.02, 0.00])
   elif symbol == key.DOWN:
     print('down')
-    action = np.array([-0.2, 0.00])
+    action = np.array([-0.02, 0.00])
   elif symbol == key.BACKSPACE or symbol == key.SLASH:
     print('RESET')
     action = None

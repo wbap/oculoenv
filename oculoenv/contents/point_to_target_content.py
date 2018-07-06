@@ -22,9 +22,12 @@ MAX_STEP_COUNT = 180 * 60
 
 
 class Quadrant(object):
-  def __init__(self, center, width):
+  def __init__(self, center, width_left, width_right, width_top, width_bottom):
     self.center = center
-    self.width = width # half width of this quadrant
+    self.width_left = width_left
+    self.width_right = width_right
+    self.width_top = width_top
+    self.width_bottom = width_bottom
     
   def get_random_location(self, target_width):
     """ Get random location in this quadrant given target size. 
@@ -33,10 +36,10 @@ class Quadrant(object):
     Returns:
       (Float, Float) Position of the random target location in this quadrant.
     """
-    minx = self.center[0] - self.width + target_width
-    maxx = self.center[0] + self.width - target_width
-    miny = self.center[1] - self.width + target_width
-    maxy = self.center[1] + self.width - target_width
+    minx = self.center[0] - self.width_left + target_width
+    maxx = self.center[0] + self.width_right - target_width
+    miny = self.center[1] - self.width_bottom + target_width
+    maxy = self.center[1] + self.width_top - target_width
     
     x = np.random.uniform(low=minx, high=maxx)
     y = np.random.uniform(low=miny, high=maxy)
@@ -50,10 +53,20 @@ class PointToTargetContent(BaseContent):
     self.lure_size = lure_size
 
     self.quadrants = []
-    self.quadrants.append(Quadrant([0.5, 0.5], 0.5))
-    self.quadrants.append(Quadrant([-0.5, 0.5], 0.5))
-    self.quadrants.append(Quadrant([-0.5, -0.5], 0.5))
-    self.quadrants.append(Quadrant([0.5, -0.5], 0.5))
+    # To avoid confilict with plus marker, adding margin
+    margin = PLUS_MARKER_WIDTH
+    self.quadrants.append(Quadrant([0.5, 0.5],
+                                   0.5-margin, 0.5, # left margin
+                                   0.5, 0.5-margin)) # bottom margin
+    self.quadrants.append(Quadrant([-0.5, 0.5],
+                                   0.5, 0.5-margin, # right margin
+                                   0.5, 0.5-margin)) # bottom margin
+    self.quadrants.append(Quadrant([-0.5, -0.5],
+                                   0.5, 0.5-margin, # right margin
+                                   0.5-margin, 0.5)) # top margin
+    self.quadrants.append(Quadrant([0.5, -0.5],
+                                   0.5-margin, 0.5, # left margin
+                                   0.5-margin, 0.5)) # top margin
     
     super(PointToTargetContent, self).__init__()
 
@@ -91,11 +104,14 @@ class PointToTargetContent(BaseContent):
   def step_content(self, local_focus_pos):
     reward = 0
 
+    need_render = False
+
     if self.phase == PHASE_START:
       if self.plus_sprite.contains_pos(local_focus_pos):
         # When hitting the red plus cursor
         print("hit the plus!!")
         self.move_to_target_phase()
+        need_render = True
     else:
       if self.target_sprite.contains_pos(local_focus_pos):
         # When hitting the target
@@ -107,9 +123,10 @@ class PointToTargetContent(BaseContent):
         reward = 1
       if reward > 0:
         self.move_to_start_phase()
+        need_render = True
     
     done = self.step_count >= MAX_STEP_COUNT
-    return reward, done
+    return reward, done, need_render
 
 
   def render_content(self):

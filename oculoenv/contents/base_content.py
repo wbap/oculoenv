@@ -102,16 +102,21 @@ class BaseContent(object):
   def reset(self):
     self.reset_content()
     self.step_count = 0
+    # Update offscreen image
+    self.render()
 
 
   def step(self, local_focus_pos):
-    reward, done = self.step_content(local_focus_pos)
+    reward, done, need_render = self.step_content(local_focus_pos)
     self.step_count += 1
+    if need_render:
+      # Update offscreen image
+      self.render()
     return reward, done
 
   
   def render(self):
-    # Render content into offscreen frame buffer texture
+    """ Render content into offscreen frame buffer texture. """
     
     # Switch to the default context
     # This is necessary on Linux nvidia drivers
@@ -155,15 +160,17 @@ class BaseContent(object):
 
 
   def init_content(self):
-    pass
+    raise NotImplementedError()
     
   def reset_content(self):
-    pass
+    raise NotImplementedError()
   
   def step_content(self, local_focus_pos):
+    raise NotImplementedError()
     reward = 0
     done = False
-    return reward, done
+    need_render = True
+    return reward, done, need_render
 
   def render_content(self):
-    pass
+    raise NotImplementedError()
