@@ -125,7 +125,7 @@ class PointToTargetContent(BaseContent):
         self.move_to_start_phase()
         need_render = True
     
-    done = self.step_count >= MAX_STEP_COUNT
+    done = self.step_count >= (MAX_STEP_COUNT-1)
     return reward, done, need_render
 
 

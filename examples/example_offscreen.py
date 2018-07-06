@@ -30,7 +30,9 @@ def check_offscreen():
   frame_size = 100
 
   for i in range(frame_size):
-    action = np.array([0.0, 0.0])
+    dx = np.random.uniform(low=-0.1, high=0.1)
+    dy = np.random.uniform(low=-0.1, high=0.1)
+    action = np.array([dx, dy])
     obs, reward, done, info = env.step(action)
     save_img(obs)
 
