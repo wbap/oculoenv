@@ -109,16 +109,13 @@ class PointToTargetContent(BaseContent):
     if self.phase == PHASE_START:
       if self.plus_sprite.contains_pos(local_focus_pos):
         # When hitting the red plus cursor
-        print("hit the plus!!")
         self.move_to_target_phase()
         need_render = True
     else:
       if self.target_sprite.contains_pos(local_focus_pos):
         # When hitting the target
-        print("hit the targete!!")
         reward = 2
       elif (self.use_lure and self.lure_sprite.contains_pos(local_focus_pos)):
-        print("hit the lure!!")
         # When hitting the lure
         reward = 1
       if reward > 0:
