@@ -84,7 +84,7 @@ class Camera(object):
   def __init__(self):
     self.reset()
 
-  def update_mat(self):
+  def _update_mat(self):
     m0 = Matrix4()
     m1 = Matrix4()
     m0.set_rot_x(self.cur_angle_v)
@@ -95,7 +95,7 @@ class Camera(object):
     self.cur_angle_v = CAMERA_INITIAL_ANGLE_V # Vertical
     self.cur_angle_h = 0 # Horizontal
     
-    self.update_mat()
+    self._update_mat()
 
 
   def get_forward_vec(self):
@@ -116,7 +116,7 @@ class Camera(object):
                              -CAMERA_VERTICAL_ANGLE_MAX, CAMERA_VERTICAL_ANGLE_MAX)
     self.cur_angle_h = clamp(self.cur_angle_h,
                              -CAMERA_HORIZONTAL_ANGLE_MAX, CAMERA_HORIZONTAL_ANGLE_MAX)
-    self.update_mat()
+    self._update_mat()
     
 
   def get_inv_mat(self):
@@ -148,12 +148,12 @@ class Environment(object):
     self.plane = PlaneObject()
 
     # Add scene objects
-    self.init_scene()
+    self._init_scene()
 
     self.reset()
 
 
-  def init_scene(self):
+  def _init_scene(self):
     # Create the objects array
     self.objects = []
 
@@ -164,10 +164,10 @@ class Environment(object):
   def reset(self):
     self.content.reset()
     self.camera.reset()
-    return self.render_offscreen()
+    return self._render_offscreen()
 
 
-  def calc_local_focus_pos(self, camera_forward_v):
+  def _calc_local_focus_pos(self, camera_forward_v):
     """ Calculate local coordinate of view focus point on the content panel. """
     
     tz = -camera_forward_v[2]
@@ -185,10 +185,10 @@ class Environment(object):
     self.camera.change_angle(d_angle_v, d_angle_h)
 
     camera_forward_v = self.camera.get_forward_vec()
-    local_focus_pos = self.calc_local_focus_pos(camera_forward_v)
+    local_focus_pos = self._calc_local_focus_pos(camera_forward_v)
     reward, done = self.content.step(local_focus_pos)
     
-    obs = self.render_offscreen()
+    obs = self._render_offscreen()
     
     return obs, reward, done, {}
 
@@ -197,8 +197,8 @@ class Environment(object):
     pass
 
 
-  def render_offscreen(self):
-    return self.render_sub(self.frame_buffer_off)
+  def _render_offscreen(self):
+    return self._render_sub(self.frame_buffer_off)
 
   
   def render(self, mode='human', close=False):
@@ -207,7 +207,7 @@ class Environment(object):
         self.window.close()
       return
     
-    img = self.render_sub(self.frame_buffer_on)
+    img = self._render_sub(self.frame_buffer_on)
     if mode == 'rgb_array':
       return img
 
@@ -258,7 +258,7 @@ class Environment(object):
     glFlush()
 
 
-  def render_sub(self, frame_buffer):
+  def _render_sub(self, frame_buffer):
     self.shadow_window.switch_to()
 
     frame_buffer.bind()

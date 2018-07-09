@@ -71,7 +71,7 @@ class PointToTargetContent(BaseContent):
     super(PointToTargetContent, self).__init__()
 
 
-  def init_content(self):
+  def _init(self):
     plus_marker_path = get_file_path('data/textures', 'plus_marker1', 'png')
     plus_marker_texture = load_texture(plus_marker_path)
     
@@ -97,36 +97,36 @@ class PointToTargetContent(BaseContent):
     self.phase = PHASE_START
 
     
-  def reset_content(self):
+  def _reset(self):
     pass
 
 
-  def step_content(self, local_focus_pos):
+  def _step(self, local_focus_pos):
     reward = 0
 
     need_render = False
 
     if self.phase == PHASE_START:
-      if self.plus_sprite.contains_pos(local_focus_pos):
+      if self.plus_sprite.contains(local_focus_pos):
         # When hitting the red plus cursor
-        self.move_to_target_phase()
+        self._move_to_target_phase()
         need_render = True
     else:
-      if self.target_sprite.contains_pos(local_focus_pos):
+      if self.target_sprite.contains(local_focus_pos):
         # When hitting the target
         reward = 2
-      elif (self.use_lure and self.lure_sprite.contains_pos(local_focus_pos)):
+      elif (self.use_lure and self.lure_sprite.contains(local_focus_pos)):
         # When hitting the lure
         reward = 1
       if reward > 0:
-        self.move_to_start_phase()
+        self._move_to_start_phase()
         need_render = True
     
     done = self.step_count >= (MAX_STEP_COUNT-1)
     return reward, done, need_render
 
 
-  def render_content(self):
+  def _render(self):
     if self.phase == PHASE_START:
       self.plus_sprite.render(self.common_quad_vlist)
     else:
@@ -135,12 +135,12 @@ class PointToTargetContent(BaseContent):
       self.target_sprite.render(self.common_quad_vlist)
 
 
-  def move_to_start_phase(self):
+  def _move_to_start_phase(self):
     """ Change phase to red plus cursor showing. """
     self.phase = PHASE_START
 
     
-  def locate_targets(self):
+  def _locate_targets(self):
     indices = list(range(4))
     random.shuffle(indices)
     
@@ -157,7 +157,7 @@ class PointToTargetContent(BaseContent):
     
     
     
-  def move_to_target_phase(self):
+  def _move_to_target_phase(self):
     """ Change phase to target showing. """
-    self.locate_targets()
+    self._locate_targets()
     self.phase = PHASE_TARGET

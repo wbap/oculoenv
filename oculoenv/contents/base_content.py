@@ -51,7 +51,7 @@ class ContentSprite(object):
     self.pos_y = pos[1]
 
 
-  def contains_pos(self, pos):
+  def contains(self, pos):
     """ Retuens whether specified position is inside the sprite rect.
     
     Arguments:
@@ -95,19 +95,19 @@ class BaseContent(object):
     self.common_quad_vlist = pyglet.graphics.vertex_list(4,
                                                          ('v3f', verts),
                                                          ('t2f', texcs))
-    self.init_content()
+    self._init()
     self.reset()
 
 
   def reset(self):
-    self.reset_content()
+    self._reset()
     self.step_count = 0
     # Update offscreen image
     self.render()
 
 
   def step(self, local_focus_pos):
-    reward, done, need_render = self.step_content(local_focus_pos)
+    reward, done, need_render = self._step(local_focus_pos)
     self.step_count += 1
     if need_render:
       # Update offscreen image
@@ -146,7 +146,7 @@ class BaseContent(object):
 
     glColor3f(*WHITE_COLOR)
 
-    self.render_content()
+    self._render()
 
     # TODO: 最終的にマルチサンプルを使わないことにすればこのblitは消える
     self.frame_buffer_off.blit()
@@ -159,18 +159,18 @@ class BaseContent(object):
     glBindTexture(GL_TEXTURE_2D, self.frame_buffer_off.tex)
 
 
-  def init_content(self):
+  def _init(self):
     raise NotImplementedError()
     
-  def reset_content(self):
+  def _reset(self):
     raise NotImplementedError()
   
-  def step_content(self, local_focus_pos):
+  def _step(self, local_focus_pos):
     raise NotImplementedError()
     reward = 0
     done = False
     need_render = True
     return reward, done, need_render
 
-  def render_content(self):
+  def _render(self):
     raise NotImplementedError()
