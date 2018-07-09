@@ -27,14 +27,20 @@ def check_offscreen():
   content = PointToTargetContent(target_size="small", use_lure=True, lure_size="large")
   env = Environment(content)
 
-  frame_size = 100
+  frame_size = 60 * 180 * 2
 
   for i in range(frame_size):
-    dx = np.random.uniform(low=-0.1, high=0.1)
-    dy = np.random.uniform(low=-0.1, high=0.1)
+    dx = np.random.uniform(low=-0.02, high=0.02)
+    dy = np.random.uniform(low=-0.02, high=0.02)
     action = np.array([dx, dy])
     obs, reward, done, info = env.step(action)
-    save_img(obs)
+    
+    if i < 100:
+      save_img(obs)
+      
+    if done:
+      print("Episode terminated")
+      obs = env.reset()
 
 
 check_offscreen()
