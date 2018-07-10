@@ -25,7 +25,7 @@ class ObjMesh(object):
     """
 
     # Assemble the absolute path to the mesh file
-    file_path = get_file_path('data/meshes', mesh_name, 'obj')
+    file_path = get_file_path('data/meshes', mesh_name + '.obj')
 
     if file_path in self.cache:
       return self.cache[file_path]
@@ -170,7 +170,7 @@ class ObjMesh(object):
     # Load the texture associated with this mesh
     file_name = os.path.split(file_path)[-1]
     tex_name = file_name.split('.')[0]
-    tex_path = get_file_path('data/textures', tex_name, 'png')
+    tex_path = get_file_path('data/textures', tex_name + '.png')
 
     # Try to load the texture, if it exists
     if os.path.exists(tex_path):

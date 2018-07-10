@@ -21,10 +21,11 @@ def load_texture(tex_path):
   
   glEnable(tex.target)
   glBindTexture(tex.target, tex.id)
+  
   glTexImage2D(
     GL_TEXTURE_2D,
     0,
-    GL_RGB,
+    GL_RGBA, #GL_RGB,
     img.width,
     img.height,
     0,
@@ -297,21 +298,10 @@ class FrameBuffer(object):
     glBindFramebuffer(GL_FRAMEBUFFER, self.fbo);
     glViewport(0, 0, self.width, self.height)
 
+    
   def blit(self):
     pass
 
-  def read_dummy(self):
-    glBindFramebuffer(GL_FRAMEBUFFER, self.fbo);
-    glReadPixels(
-      0,
-      0,
-      1,
-      1,
-      GL_RGB,
-      GL_UNSIGNED_BYTE,
-      self.img_array.ctypes.data_as(POINTER(GLubyte))
-    )
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
   def read(self):
     glBindFramebuffer(GL_FRAMEBUFFER, self.fbo);

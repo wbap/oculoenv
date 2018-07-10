@@ -7,9 +7,11 @@ import sys
 import pyglet
 import numpy as np
 
-from oculoenv import PointToTargetContent, Environment
+from oculoenv import Environment, PointToTargetContent, OddOneOutContent
 
-content = PointToTargetContent(target_size="small", use_lure=True, lure_size="large")
+#content = PointToTargetContent(target_size="small", use_lure=True, lure_size="large")
+content = OddOneOutContent()
+
 env = Environment(content)
 env.render() # env.window is created here
 

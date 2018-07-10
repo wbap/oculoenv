@@ -14,7 +14,7 @@ from ..utils import get_file_path
 PHASE_START = 0
 PHASE_TARGET = 1
 
-PLUS_MARKER_WIDTH = 0.15 # マーカーの半分の幅 (1.0で画面いっぱい)
+START_MARKER_WIDTH = 0.15 # マーカーの半分の幅 (1.0で画面いっぱい)
 TARGET_WIDTH_SMALL = 0.1
 TARGET_WIDTH_LARGE = 0.2
 
@@ -54,7 +54,7 @@ class PointToTargetContent(BaseContent):
 
     self.quadrants = []
     # To avoid confilict with plus marker, adding margin
-    margin = PLUS_MARKER_WIDTH
+    margin = START_MARKER_WIDTH
     self.quadrants.append(Quadrant([0.5, 0.5],
                                    0.5-margin, 0.5, # left margin
                                    0.5, 0.5-margin)) # bottom margin
@@ -72,15 +72,15 @@ class PointToTargetContent(BaseContent):
 
 
   def _init(self):
-    plus_marker_path = get_file_path('data/textures', 'plus_marker1', 'png')
-    plus_marker_texture = load_texture(plus_marker_path)
+    start_marker_path = get_file_path('data/textures', 'start_marker0.png')
+    start_marker_texture = load_texture(start_marker_path)
     
-    e_marker_path = get_file_path('data/textures', 'e_marker1', 'png')
+    e_marker_path = get_file_path('data/textures', 'e_marker0.png')
     e_marker_texture = load_texture(e_marker_path)
     
     # (1.0, 1.0)が右上の座標
-    self.plus_sprite = ContentSprite(plus_marker_texture, 0.0, 0.0,
-                                     PLUS_MARKER_WIDTH)
+    self.start_sprite = ContentSprite(start_marker_texture, 0.0, 0.0,
+                                      START_MARKER_WIDTH)
     
     if self.target_size == "small":
       target_with = TARGET_WIDTH_SMALL
@@ -98,7 +98,7 @@ class PointToTargetContent(BaseContent):
 
     
   def _reset(self):
-    pass
+    self._move_to_start_phase()
 
 
   def _step(self, local_focus_pos):
@@ -107,7 +107,7 @@ class PointToTargetContent(BaseContent):
     need_render = False
 
     if self.phase == PHASE_START:
-      if self.plus_sprite.contains(local_focus_pos):
+      if self.start_sprite.contains(local_focus_pos):
         # When hitting the red plus cursor
         self._move_to_target_phase()
         need_render = True
@@ -126,9 +126,9 @@ class PointToTargetContent(BaseContent):
     return reward, done, need_render
 
 
-  def _render(self):
+  def _render(self):    
     if self.phase == PHASE_START:
-      self.plus_sprite.render(self.common_quad_vlist)
+      self.start_sprite.render(self.common_quad_vlist)
     else:
       if self.use_lure:
         self.lure_sprite.render(self.common_quad_vlist)

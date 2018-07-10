@@ -12,7 +12,6 @@ from ctypes import POINTER
 from ..graphics import MultiSampleFrameBuffer, FrameBuffer, load_texture
 from ..geom import Matrix4
 
-CONTENT_BG_COLOR = np.array([1.0, 1.0, 1.0, 1.0])
 WHITE_COLOR = np.array([1.0, 1.0, 1.0])
 
 
@@ -70,7 +69,8 @@ class ContentSprite(object):
   
 
 class BaseContent(object):
-  def __init__(self, width=512, height=512):
+  def __init__(self, bg_color=[1.0, 1.0, 1.0, 1.0], width=512, height=512):
+    self.bg_color = np.array(bg_color)
     self.width = width
     self.height = height
     
@@ -126,7 +126,7 @@ class BaseContent(object):
     self.frame_buffer_off.bind()
     
     # Clear the color and depth buffers
-    glClearColor(*CONTENT_BG_COLOR)
+    glClearColor(*self.bg_color)
     glClearDepth(1.0)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
@@ -146,13 +146,19 @@ class BaseContent(object):
 
     glColor3f(*WHITE_COLOR)
 
+    # Enable alpha blend
+    glEnable(GL_BLEND)
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
     self._render()
 
+    # Disable alpha blend
+    glDisable(GL_BLEND)
+    
     # TODO: 最終的にマルチサンプルを使わないことにすればこのblitは消える
     self.frame_buffer_off.blit()
 
-    # TODO: なぜかここでダミーのreadを入れないとレンダリングされた結果がテクスチャに反映されない
-    self.frame_buffer_off.read_dummy()
+    glFlush()
 
 
   def bind(self):
