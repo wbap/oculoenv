@@ -10,20 +10,21 @@ import pyglet
 from pyglet.gl import *
 from ctypes import POINTER
 
-from .graphics import MultiSampleFrameBuffer
+from .graphics import MultiSampleFrameBuffer, FrameBuffer
 from .objmesh import ObjMesh
 from .utils import clamp, rad2deg, deg2rad
 from .geom import Matrix4
-from .content import Content
 
 BG_COLOR = np.array([0.45, 0.82, 1.0, 1.0])
 WHITE_COLOR = np.array([1.0, 1.0, 1.0])
 
-CAMERA_FOV_Y = 50
+CAMERA_FOV_Y = 50 # Camera vertical field of view angle (degree)
 
-CAMERA_INITIAL_ANGLE_V = deg2rad(10.0)
-CAMERA_VERTICAL_ANGLE_MAX = deg2rad(45.0)
-CAMERA_HORIZONTAL_ANGLE_MAX = deg2rad(45.0)
+CAMERA_INITIAL_ANGLE_V = deg2rad(10.0)      # Initial vertical angle of camera (radian)
+CAMERA_VERTICAL_ANGLE_MAX = deg2rad(45.0)   # Max vertical angle of camera (radian)
+CAMERA_HORIZONTAL_ANGLE_MAX = deg2rad(45.0) # Max horizontal angle of camera (radian)
+
+PLANE_DISTANCE = 3.0 # Distance to content plane
 
 
 class PlaneObject(object):
@@ -83,7 +84,7 @@ class Camera(object):
   def __init__(self):
     self.reset()
 
-  def update_mat(self):
+  def _update_mat(self):
     m0 = Matrix4()
     m1 = Matrix4()
     m0.set_rot_x(self.cur_angle_v)
@@ -94,7 +95,7 @@ class Camera(object):
     self.cur_angle_v = CAMERA_INITIAL_ANGLE_V # Vertical
     self.cur_angle_h = 0 # Horizontal
     
-    self.update_mat()
+    self._update_mat()
 
 
   def get_forward_vec(self):
@@ -115,7 +116,7 @@ class Camera(object):
                              -CAMERA_VERTICAL_ANGLE_MAX, CAMERA_VERTICAL_ANGLE_MAX)
     self.cur_angle_h = clamp(self.cur_angle_h,
                              -CAMERA_HORIZONTAL_ANGLE_MAX, CAMERA_HORIZONTAL_ANGLE_MAX)
-    self.update_mat()
+    self._update_mat()
     
 
   def get_inv_mat(self):
@@ -135,9 +136,8 @@ class Environment(object):
     # Invisible window to render into (shadow OpenGL context)
     self.shadow_window = pyglet.window.Window(width=1, height=1, visible=False)
 
-    #self.frame_buffer_off = MultiSampleFrameBuffer(128, 128, num_samples=32)
-    self.frame_buffer_off = MultiSampleFrameBuffer(128, 128, num_samples=4)
-    self.frame_buffer_on = MultiSampleFrameBuffer(640, 640, num_samples=4)
+    self.frame_buffer_off = FrameBuffer(128, 128)
+    self.frame_buffer_on = FrameBuffer(640, 640)
 
     self.camera = Camera()
 
@@ -148,36 +148,47 @@ class Environment(object):
     self.plane = PlaneObject()
 
     # Add scene objects
-    self.init_scene()
+    self._init_scene()
 
     self.reset()
 
 
-  def init_scene(self):
+  def _init_scene(self):
     # Create the objects array
     self.objects = []
 
-    obj = SceneObject("frame0", pos=[0.0, 0.0, -3.0], scale=2.0)
+    obj = SceneObject("frame0", pos=[0.0, 0.0, -PLANE_DISTANCE], scale=2.0)
     self.objects.append(obj)
 
 
   def reset(self):
     self.content.reset()
     self.camera.reset()
-    return self.render_offscreen()
+    return self._render_offscreen()
+
+
+  def _calc_local_focus_pos(self, camera_forward_v):
+    """ Calculate local coordinate of view focus point on the content panel. """
+    
+    tz = -camera_forward_v[2]
+    tx = camera_forward_v[0]
+    ty = camera_forward_v[1]
+
+    local_x = tx * (PLANE_DISTANCE / tz)
+    local_y = ty * (PLANE_DISTANCE / tz)
+    return [local_x, local_y]
 
 
   def step(self, action):
-    d_angle_v = action[0] * 0.1 # top-down angle
-    d_angle_h = action[1] * 0.1 # left-right angle
+    d_angle_v = action[0] # top-down angle
+    d_angle_h = action[1] # left-right angle
     self.camera.change_angle(d_angle_v, d_angle_h)
 
     camera_forward_v = self.camera.get_forward_vec()
-    # TODO:
-    local_focus_pos = [0,0]
+    local_focus_pos = self._calc_local_focus_pos(camera_forward_v)
     reward, done = self.content.step(local_focus_pos)
     
-    obs = self.render_offscreen()
+    obs = self._render_offscreen()
     
     return obs, reward, done, {}
 
@@ -186,8 +197,8 @@ class Environment(object):
     pass
 
 
-  def render_offscreen(self):
-    return self.render_sub(self.frame_buffer_off)
+  def _render_offscreen(self):
+    return self._render_sub(self.frame_buffer_off)
 
   
   def render(self, mode='human', close=False):
@@ -196,7 +207,7 @@ class Environment(object):
         self.window.close()
       return
     
-    img = self.render_sub(self.frame_buffer_on)
+    img = self._render_sub(self.frame_buffer_on)
     if mode == 'rgb_array':
       return img
 
@@ -247,10 +258,7 @@ class Environment(object):
     glFlush()
 
 
-  def render_sub(self, frame_buffer):
-    # Render panel content into frame buffer texture
-    self.content.render()
-    
+  def _render_sub(self, frame_buffer):
     self.shadow_window.switch_to()
 
     frame_buffer.bind()
@@ -289,10 +297,9 @@ class Environment(object):
     # Draw content panel
     glEnable(GL_TEXTURE_2D)
     glPushMatrix()
-    glTranslatef(0.0, 0.0, -3.0)
+    glTranslatef(0.0, 0.0, -PLANE_DISTANCE)
     glScalef(1.0, 1.0, 1.0)
     self.plane.render(self.content)
     glPopMatrix()
     
     return frame_buffer.read()
-

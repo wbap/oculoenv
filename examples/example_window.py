@@ -9,11 +9,10 @@ import numpy as np
 
 from oculoenv import PointToTargetContent, Environment
 
-content = PointToTargetContent()
+content = PointToTargetContent(target_size="small", use_lure=True, lure_size="large")
 env = Environment(content)
 env.render() # env.window is created here
 
-# 1フレーム目が画面が出ないバグがある
 
 @env.window.event
 def on_key_press(symbol, modifiers):
@@ -22,16 +21,16 @@ def on_key_press(symbol, modifiers):
   action = None
   if symbol == key.LEFT:
     print('left')
-    action = np.array([0.00, 1.00])
+    action = np.array([0.00, 0.02])
   elif symbol == key.RIGHT:
     print('right')
-    action = np.array([0.00, -1.00])
+    action = np.array([0.00, -0.02])
   elif symbol == key.UP:
     print('up')
-    action = np.array([1.00, 0.00])
+    action = np.array([0.02, 0.00])
   elif symbol == key.DOWN:
     print('down')
-    action = np.array([-1.00, 0.00])
+    action = np.array([-0.02, 0.00])
   elif symbol == key.BACKSPACE or symbol == key.SLASH:
     print('RESET')
     action = None

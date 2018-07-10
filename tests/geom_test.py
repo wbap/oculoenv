@@ -7,7 +7,7 @@ import unittest
 import numpy as np
 import math
 
-from geom import Matrix4, Matrix3
+from oculoenv.geom import Matrix4, Matrix3
 
 
 class TestMatrix4(unittest.TestCase):
@@ -94,48 +94,6 @@ class TestMatrix4(unittest.TestCase):
     a_test = np.array([1,0,0,0, 0,1,0,0, 0,0,1,0, 100,200,300,1], dtype=np.float32)
 
     self.assertTrue(np.allclose(a, a_test))
-
-
-class TestMatrix3(unittest.TestCase):
-  def check_matrix_near(self, mat0, mat1):
-    ret = np.allclose(mat0.m, mat1.m)
-    if not ret:
-      print(mat0.m)
-      print(mat1.m)
-    self.assertTrue(ret)
-
-  def test_init(self):
-    mat0 = Matrix3()
-    m_test = np.identity(3, dtype=np.float32)
-    self.assertTrue(np.allclose(mat0.m, m_test))
-
-  def test_invert(self):
-    mat0 = Matrix3()
-    
-    mat0.set_rot(1.0)
-    mat0.set_trans([1.0, 2.0])
-    
-    mat1 = mat0.invert()
-    mat2 = mat1.invert()
-    
-    self.check_matrix_near(mat2, mat0)
-
-  def test_set_rot(self):
-    mat0 = Matrix3()
-    v0 = [1,0] # x-axis
-    
-    for i in range(8):
-      angle = i * math.pi / 4.0
-      mat0.set_rot(angle)
-      v1 = mat0.transform(v0)
-      ret = np.allclose([math.cos(angle), math.sin(angle), 1.0], v1)
-      self.assertTrue(ret)
-
-  def test_set_scale(self):
-    mat0 = Matrix3()
-    mat0.set_scale(3.0)
-    m_test = np.identity(3, dtype=np.float32) * 3.0
-    self.assertTrue(np.allclose(mat0.m, m_test))
 
 
     

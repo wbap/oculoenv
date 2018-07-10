@@ -14,52 +14,11 @@ from ctypes import byref, POINTER
 
 from .utils import *
 
-class Texture(object):
-  """
-  Manage the caching of textures, and texture randomization
-  """
-
-  # List of textures available for a given path
-  tex_paths = {}
-
-  # Cache of textures
-  tex_cache = {}
-
-  @classmethod
-  def get(self, tex_name, rng=None):
-    paths = self.tex_paths.get(tex_name, [])
-
-    # Get an inventory of the existing texture files
-    if len(paths) == 0:
-      for i in range(1, 10):
-        path = get_file_path('textures', '%s_%d' % (tex_name, i), 'png')
-        if not os.path.exists(path):
-          break
-        paths.append(path)
-
-    assert len(paths) > 0, 'failed to load textures for name "%s"' % tex_name
-
-    if rng:
-      path_idx = rng.randint(0, len(paths))
-      path = paths[path_idx]
-    else:
-      path = paths[0]
-
-    if path not in self.tex_cache:
-      self.tex_cache[path] = Texture(load_texture(path))
-
-    return self.tex_cache[path]
-
-  def __init__(self, tex):
-    assert not isinstance(tex, str)
-    self.tex = tex
-
-  def bind(self):
-    glBindTexture(self.tex.target, self.tex.id)
 
 def load_texture(tex_path):
   img = pyglet.image.load(tex_path)
   tex = img.get_texture()
+  
   glEnable(tex.target)
   glBindTexture(tex.target, tex.id)
   glTexImage2D(
@@ -79,7 +38,8 @@ def load_texture(tex_path):
 
   return tex
 
-def create_frame_buffers(width, height, num_samples, return_tex=False):
+
+def create_multi_sample_frame_buffers(width, height, num_samples):
   """Create the frame buffer objects"""
 
   # Create a frame buffer (rendering target)
@@ -93,8 +53,9 @@ def create_frame_buffers(width, height, num_samples, return_tex=False):
   try:
     # Create a multisampled texture to render into
     fbTex = GLuint(0)
-    glGenTextures( 1, byref(fbTex));
-    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, fbTex);
+    glGenTextures(1, byref(fbTex))
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, fbTex)
+
     glTexImage2DMultisample(
       GL_TEXTURE_2D_MULTISAMPLE,
       num_samples,
@@ -102,21 +63,24 @@ def create_frame_buffers(width, height, num_samples, return_tex=False):
       width,
       height,
       True
-    );
+    )
+
     glFramebufferTexture2D(
       GL_FRAMEBUFFER,
       GL_COLOR_ATTACHMENT0,
       GL_TEXTURE_2D_MULTISAMPLE,
       fbTex,
       0
-    );
+    )
 
     # Attach a multisampled depth buffer to the FBO
     depth_rb = GLuint(0)
     glGenRenderbuffers(1, byref(depth_rb))
     glBindRenderbuffer(GL_RENDERBUFFER, depth_rb)
-    glRenderbufferStorageMultisample(GL_RENDERBUFFER, num_samples, GL_DEPTH_COMPONENT, width, height);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_rb);
+    glRenderbufferStorageMultisample(GL_RENDERBUFFER, num_samples, GL_DEPTH_COMPONENT,
+                                     width, height)
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER,
+                              depth_rb)
 
   except:
     print('Falling back to non-multisampled frame buffer')
@@ -142,14 +106,14 @@ def create_frame_buffers(width, height, num_samples, return_tex=False):
       GL_TEXTURE_2D,
       fbTex,
       0
-    );
+    )
 
     # Attach depth buffer to FBO
     depth_rb = GLuint(0)
     glGenRenderbuffers(1, byref(depth_rb))
     glBindRenderbuffer(GL_RENDERBUFFER, depth_rb)
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height)
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_rb);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_rb)
 
   # Sanity check
   if pyglet.options['debug_gl']:
@@ -193,14 +157,65 @@ def create_frame_buffers(width, height, num_samples, return_tex=False):
   # Unbind the frame buffer
   glBindFramebuffer(GL_FRAMEBUFFER, 0)
 
-  if return_tex:
-    return multi_fbo, final_fbo, fbTex
-  else:
-    return multi_fbo, final_fbo
+  return multi_fbo, final_fbo, fbTex
+
+
+
+def create_frame_buffer(width, height):
+  """Create the frame buffer objects"""
+
+  # Create a frame buffer (rendering target)
+  fbo = GLuint(0)
+  glGenFramebuffers(1, byref(fbo))
+  glBindFramebuffer(GL_FRAMEBUFFER, fbo)
+
+  # Create a plain texture texture to render into
+  fbTex = GLuint(0)
+  glGenTextures(1, byref(fbTex));
+  glBindTexture(GL_TEXTURE_2D, fbTex);
+  glTexImage2D(
+    GL_TEXTURE_2D,
+    0,
+    GL_RGBA,
+    width,
+    height,
+    0,
+    GL_RGBA,
+    GL_FLOAT,
+    None
+  )
+  glFramebufferTexture2D(
+    GL_FRAMEBUFFER,
+    GL_COLOR_ATTACHMENT0,
+    GL_TEXTURE_2D,
+    fbTex,
+    0
+  )
+
+  # Attach depth buffer to FBO
+  depth_rb = GLuint(0)
+  glGenRenderbuffers(1, byref(depth_rb))
+  glBindRenderbuffer(GL_RENDERBUFFER, depth_rb)
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height)
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_rb)
+
+  # Sanity check
+  if pyglet.options['debug_gl']:
+    res = glCheckFramebufferStatus(GL_FRAMEBUFFER)
+    assert res == GL_FRAMEBUFFER_COMPLETE
+
+  # Enable depth testing
+  glEnable(GL_DEPTH_TEST)
+
+  # Unbind the frame buffer
+  glBindFramebuffer(GL_FRAMEBUFFER, 0)
+
+  return fbo, fbTex
+
 
 
 class MultiSampleFrameBuffer(object):
-  """ Frame buffer class with multi sampling. 
+  """ Frame buffer class with multi sampling.
 
   Arguments:
     width:   Integer, frame buffer width
@@ -211,11 +226,10 @@ class MultiSampleFrameBuffer(object):
     self.width = width
     self.height = height
     
-    self.multi_fbo, self.final_fbo, self.tex = create_frame_buffers(
+    self.multi_fbo, self.final_fbo, self.tex = create_multi_sample_frame_buffers(
       width,
       height,
-      num_samples,
-      return_tex=True
+      num_samples
     )
 
     self.img_array = np.zeros(shape=(height, width, 3), dtype=np.uint8)
@@ -246,6 +260,61 @@ class MultiSampleFrameBuffer(object):
     self.blit()
 
     glBindFramebuffer(GL_FRAMEBUFFER, self.final_fbo);
+    glReadPixels(
+      0,
+      0,
+      self.width,
+      self.height,
+      GL_RGB,
+      GL_UNSIGNED_BYTE,
+      self.img_array.ctypes.data_as(POINTER(GLubyte))
+    )
+
+    # Unbind the frame buffer
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    return self.img_array
+
+
+class FrameBuffer(object):
+  """ Frame buffer class with multi sampling.
+
+  Arguments:
+    width:   Integer, frame buffer width
+    height:  Integer, frame buffer height
+  """
+  def __init__(self, width, height):
+    self.width = width
+    self.height = height
+    
+    self.fbo, self.tex = create_frame_buffer(
+      width,
+      height
+    )
+
+    self.img_array = np.zeros(shape=(height, width, 3), dtype=np.uint8)
+
+  def bind(self):
+    glBindFramebuffer(GL_FRAMEBUFFER, self.fbo);
+    glViewport(0, 0, self.width, self.height)
+
+  def blit(self):
+    pass
+
+  def read_dummy(self):
+    glBindFramebuffer(GL_FRAMEBUFFER, self.fbo);
+    glReadPixels(
+      0,
+      0,
+      1,
+      1,
+      GL_RGB,
+      GL_UNSIGNED_BYTE,
+      self.img_array.ctypes.data_as(POINTER(GLubyte))
+    )
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+  def read(self):
+    glBindFramebuffer(GL_FRAMEBUFFER, self.fbo);
     glReadPixels(
       0,
       0,
