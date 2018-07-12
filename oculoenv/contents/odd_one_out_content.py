@@ -8,8 +8,6 @@ import random
 from pyglet.gl import *
 
 from .base_content import BaseContent, ContentSprite
-from ..graphics import load_texture
-from ..utils import get_file_path
 
 
 PHASE_START = 0
@@ -39,7 +37,7 @@ GRID_DIVISIONS = [3, 5, 7]
 MOTION_INTERVAL_FRAMES = 4
 
 
-class SignSprite(object):
+class OddOneOutSignSprite(object):
   def __init__(self,
                textures,
                tex_index,
@@ -149,24 +147,18 @@ class OddOneOutContent(BaseContent):
 
 
   def _init(self):
-    start_marker_path = get_file_path('data/textures', 'start_marker0.png')
-    start_marker_texture = load_texture(start_marker_path)
+    start_marker_texture = self._load_texture('start_marker0.png')
     
     self.start_sprite = ContentSprite(start_marker_texture, 0.0, 0.0,
                                       START_MARKER_WIDTH)
-    
-    general_sign_path0 = get_file_path('data/textures', 'general_plus0.png')
-    general_sign_path1 = get_file_path('data/textures', 'general_rect0.png')
-    general_sign_path2 = get_file_path('data/textures', 'general_h_bar0.png')
-    general_sign_path3 = get_file_path('data/textures', 'general_v_bar0.png')
 
-    sign_pathes = [general_sign_path0, general_sign_path1,
-                   general_sign_path2, general_sign_path3]
-    self.sign_textures = [load_texture(path) for path in sign_pathes]
+    sign_pathes = ['general_plus0.png', 'general_rect0.png',
+                   'general_h_bar0.png', 'general_v_bar0.png']
+    self.sign_textures = self._load_textures(sign_pathes)
 
     self._prepare_sign_sprites()
 
-    self.phase = PHASE_START    
+    self.phase = PHASE_START
 
     
   def _prepare_sign_sprites(self):
@@ -196,13 +188,13 @@ class OddOneOutContent(BaseContent):
           if has_odd_motion:
             has_motion = True
         
-        sign_sprite = SignSprite(self.sign_textures,
-                                 tex_index,
-                                 i, j,
-                                 grid_division=grid_division,
-                                 color_index=color_index,
-                                 has_motion=has_motion,
-                                 odd=odd)
+        sign_sprite = OddOneOutSignSprite(self.sign_textures,
+                                          tex_index,
+                                          i, j,
+                                          grid_division=grid_division,
+                                          color_index=color_index,
+                                          has_motion=has_motion,
+                                          odd=odd)
         self.sign_sprites.append(sign_sprite)
         count += 1
 
@@ -300,6 +292,6 @@ class OddOneOutContent(BaseContent):
 
     
   def _move_to_find_phase(self):
-    """ Change phase to target showing. """
+    """ Change phase to target finding. """
     self._prepare_sign_sprites()
     self.phase = PHASE_FIND

@@ -6,23 +6,23 @@ from __future__ import print_function
 import unittest
 import numpy as np
 
-from oculoenv.contents.odd_one_out_content import SignSprite, OddOneOutContent, \
+from oculoenv.contents.odd_one_out_content import OddOneOutSignSprite, OddOneOutContent, \
   ODD_TYPE_COLOR, ODD_TYPE_SHAPE, ODD_TYPE_ORIENTATION, ODD_TYPE_MOTION
 
 
 
-class TestSignSprite(unittest.TestCase):
+class TestOddOneOutSignSprite(unittest.TestCase):
   def test_step(self):
     dummy_textures = [None] * 4
     grid_division = 3
     
-    sign_sprite = SignSprite(dummy_textures,
-                             0,
-                             0, 0,
-                             grid_division=grid_division,
-                             color_index=0,
-                             has_motion=True,
-                             odd=True)
+    sign_sprite = OddOneOutSignSprite(dummy_textures,
+                                      0,
+                                      0, 0,
+                                      grid_division=grid_division,
+                                      color_index=0,
+                                      has_motion=True,
+                                      odd=True)
     for i in range(8):
       need_rapaint = sign_sprite.step()
       if i % 4 == 3:
@@ -36,13 +36,13 @@ class TestSignSprite(unittest.TestCase):
     dummy_textures = [None] * 4
     grid_division = 3
     
-    sign_sprite = SignSprite(dummy_textures,
-                             0,
-                             1, 1, # Will be located at (0,0)
-                             grid_division=grid_division,
-                             color_index=0,
-                             has_motion=True,
-                             odd=True)
+    sign_sprite = OddOneOutSignSprite(dummy_textures,
+                                      0,
+                                      1, 1, # Will be located at (0,0)
+                                      grid_division=grid_division,
+                                      color_index=0,
+                                      has_motion=True,
+                                      odd=True)
 
     width = 2.0 / 6.0 # Half width of rectangle
     

@@ -11,6 +11,8 @@ from ctypes import POINTER
 
 from ..graphics import MultiSampleFrameBuffer, FrameBuffer, load_texture
 from ..geom import Matrix4
+from ..graphics import load_texture
+from ..utils import get_file_path
 
 WHITE_COLOR = np.array([1.0, 1.0, 1.0])
 
@@ -25,17 +27,21 @@ class ContentSprite(object):
     pos_y:  Float, Y position
     width:  Float, half width the sprite
     rot_index: Integer, rotation angle index (0=0 degree, 1=90 degree, 2=180 degree, etc...)
+    color:  Float Array[3], color for the texture
   """
   
-  def __init__(self, tex, pos_x=0.0, pos_y=0.0, width=1.0, rot_index=0):
+  def __init__(self, tex, pos_x=0.0, pos_y=0.0, width=1.0, rot_index=0, color=[1.0, 1.0, 1.0]):
     self.tex = tex
     self.pos_x = pos_x
     self.pos_y = pos_y
     self.width = width
     self.rot_index = rot_index
-
+    self.color = color
+    
 
   def render(self, common_quad_vlist):
+    glColor3f(*self.color)
+    
     glPushMatrix()
     glTranslatef(self.pos_x, self.pos_y, 0.0)
     glScalef(self.width, self.width, self.width)
@@ -97,6 +103,22 @@ class BaseContent(object):
                                                          ('t2f', texcs))
     self._init()
     self.reset()
+
+
+  def _load_texture(self, file_name):
+    path = get_file_path('data/textures', file_name)
+    return load_texture(path)
+
+
+  def _load_textures(self, file_names):
+    textures = []
+    
+    for file_name in file_names:
+      path = get_file_path('data/textures', file_name)
+      texture = load_texture(path)
+      textures.append(texture)
+
+    return textures
 
 
   def reset(self):

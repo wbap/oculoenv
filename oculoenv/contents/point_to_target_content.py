@@ -7,8 +7,6 @@ import numpy as np
 import random
 
 from .base_content import BaseContent, ContentSprite
-from ..graphics import load_texture
-from ..utils import get_file_path
 
 
 PHASE_START = 0
@@ -72,11 +70,8 @@ class PointToTargetContent(BaseContent):
 
 
   def _init(self):
-    start_marker_path = get_file_path('data/textures', 'start_marker0.png')
-    start_marker_texture = load_texture(start_marker_path)
-    
-    e_marker_path = get_file_path('data/textures', 'e_marker0.png')
-    e_marker_texture = load_texture(e_marker_path)
+    start_marker_texture = self._load_texture('start_marker0.png')
+    e_marker_texture = self._load_texture('e_marker0.png')
     
     # (1.0, 1.0)が右上の座標
     self.start_sprite = ContentSprite(start_marker_texture, 0.0, 0.0,
