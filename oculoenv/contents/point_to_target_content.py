@@ -71,7 +71,7 @@ class PointToTargetContent(BaseContent):
 
   def _init(self):
     start_marker_texture = self._load_texture('start_marker0.png')
-    e_marker_texture = self._load_texture('e_marker0.png')
+    e_marker_texture = self._load_texture('general_e0.png')
     
     # (1.0, 1.0)が右上の座標
     self.start_sprite = ContentSprite(start_marker_texture, 0.0, 0.0,
@@ -86,9 +86,10 @@ class PointToTargetContent(BaseContent):
     else:
       lure_width = TARGET_WIDTH_LARGE
     
-    self.target_sprite = ContentSprite(e_marker_texture, 0.0, 0.0, target_with)
+    self.target_sprite = ContentSprite(e_marker_texture, 0.0, 0.0, target_with,
+                                       color=[0.0, 0.0, 0.0])
     self.lure_sprite = ContentSprite(e_marker_texture, 0.0, 0.0, lure_width,
-                                     rot_index=1)
+                                     rot_index=1, color=[0.0, 0.0, 0.0])
     self.phase = PHASE_START
 
     
