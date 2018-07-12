@@ -16,7 +16,7 @@ def get_subdir_path(sub_dir):
   return dir_path
 
 
-def get_file_path(sub_dir, file_name, default_ext):
+def get_file_path(sub_dir, file_name):
   """
   Get the absolute path of a resource file, which may be relative to
   the agi_lab module directory, or an absolute path.
@@ -26,18 +26,12 @@ def get_file_path(sub_dir, file_name, default_ext):
   what the current working directory is.
   """
 
-  assert '.' not in default_ext
-  assert '/' not in default_ext
-
   # If this is already a real path
   if os.path.exists(file_name):
     return file_name
 
   subdir_path = get_subdir_path(sub_dir)
   file_path = os.path.join(subdir_path, file_name)
-
-  if '.' not in file_name:
-    file_path += '.' + default_ext
 
   return file_path
 

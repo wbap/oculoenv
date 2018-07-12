@@ -11,8 +11,9 @@ from ctypes import POINTER
 
 from ..graphics import MultiSampleFrameBuffer, FrameBuffer, load_texture
 from ..geom import Matrix4
+from ..graphics import load_texture
+from ..utils import get_file_path
 
-CONTENT_BG_COLOR = np.array([1.0, 1.0, 1.0, 1.0])
 WHITE_COLOR = np.array([1.0, 1.0, 1.0])
 
 
@@ -26,17 +27,21 @@ class ContentSprite(object):
     pos_y:  Float, Y position
     width:  Float, half width the sprite
     rot_index: Integer, rotation angle index (0=0 degree, 1=90 degree, 2=180 degree, etc...)
+    color:  Float Array[3], color for the texture
   """
   
-  def __init__(self, tex, pos_x=0.0, pos_y=0.0, width=1.0, rot_index=0):
+  def __init__(self, tex, pos_x=0.0, pos_y=0.0, width=1.0, rot_index=0, color=[1.0, 1.0, 1.0]):
     self.tex = tex
     self.pos_x = pos_x
     self.pos_y = pos_y
     self.width = width
     self.rot_index = rot_index
-
+    self.color = color
+    
 
   def render(self, common_quad_vlist):
+    glColor3f(*self.color)
+    
     glPushMatrix()
     glTranslatef(self.pos_x, self.pos_y, 0.0)
     glScalef(self.width, self.width, self.width)
@@ -70,7 +75,8 @@ class ContentSprite(object):
   
 
 class BaseContent(object):
-  def __init__(self, width=512, height=512):
+  def __init__(self, bg_color=[1.0, 1.0, 1.0, 1.0], width=512, height=512):
+    self.bg_color = np.array(bg_color)
     self.width = width
     self.height = height
     
@@ -97,6 +103,22 @@ class BaseContent(object):
                                                          ('t2f', texcs))
     self._init()
     self.reset()
+
+
+  def _load_texture(self, file_name):
+    path = get_file_path('data/textures', file_name)
+    return load_texture(path)
+
+
+  def _load_textures(self, file_names):
+    textures = []
+    
+    for file_name in file_names:
+      path = get_file_path('data/textures', file_name)
+      texture = load_texture(path)
+      textures.append(texture)
+
+    return textures
 
 
   def reset(self):
@@ -126,7 +148,7 @@ class BaseContent(object):
     self.frame_buffer_off.bind()
     
     # Clear the color and depth buffers
-    glClearColor(*CONTENT_BG_COLOR)
+    glClearColor(*self.bg_color)
     glClearDepth(1.0)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
@@ -146,13 +168,19 @@ class BaseContent(object):
 
     glColor3f(*WHITE_COLOR)
 
+    # Enable alpha blend
+    glEnable(GL_BLEND)
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
     self._render()
 
+    # Disable alpha blend
+    glDisable(GL_BLEND)
+    
     # TODO: 最終的にマルチサンプルを使わないことにすればこのblitは消える
     self.frame_buffer_off.blit()
 
-    # TODO: なぜかここでダミーのreadを入れないとレンダリングされた結果がテクスチャに反映されない
-    self.frame_buffer_off.read_dummy()
+    glFlush()
 
 
   def bind(self):
