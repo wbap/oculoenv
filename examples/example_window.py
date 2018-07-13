@@ -9,8 +9,7 @@ import numpy as np
 from enum import Enum
 import argparse
 
-from oculoenv import Environment
-from oculoenv import PointToTargetContent, ChangeDetectionContent
+from oculoenv import Environment, PointToTargetContent, OddOneOutContent, VisualSearchContent, ChangeDetectionContent
 
 
 class ContentEnum(Enum):
@@ -63,7 +62,8 @@ class KeyEventListner(object):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--content", help="\n1: PointToTarget\n2: ChangeDetection", type=int)
+    parser.add_argument("--content", help="\n1: Point To Target\n2: Change Detection\n"
+                                          + "3: Odd One Out\n4: Visual Search", type=int)
 
     args = parser.parse_args()
 
