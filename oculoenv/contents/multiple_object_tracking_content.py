@@ -30,11 +30,10 @@ BALL_COLOR = [0.0, 0.0, 0.0]
 
 MAX_STEP_COUNT = 180 * 60
 
-#..MEMORY_STEP_COUNT = 60
-#..MOVE_STEP_COUNT = 120
+MEMORY_STEP_COUNT = 60
+#..MEMORY_STEP_COUNT = 3
+MOVE_STEP_COUNT = 120
 
-MEMORY_STEP_COUNT = 3
-MOVE_STEP_COUNT = 10
 
 # In what percentage of the region, balls can move.
 MOVE_REGION_RATE = 0.7
@@ -52,7 +51,6 @@ class MultipleObjectTrackingSprite(object):
         
         self.is_memory_target = is_memory_target
         self.is_response_target = is_response_target
-
         
     def randomize_pos(self):
         rate_x = np.random.uniform(low=0.0, high=1.0)
@@ -60,11 +58,9 @@ class MultipleObjectTrackingSprite(object):
         
         self.pos_x = (2.0 * rate_x - 1.0) * MOVE_REGION_RATE
         self.pos_y = (2.0 * rate_y - 1.0) * MOVE_REGION_RATE
-
         
     def randomize_direction(self):
         self.direction = np.random.uniform(low=-1.0, high=1.0) * np.pi
-
 
     def render(self, common_quad_vlist, phase, index):
         if phase == PHASE_MEMORY and self.is_memory_target:
@@ -81,10 +77,8 @@ class MultipleObjectTrackingSprite(object):
         common_quad_vlist.draw(GL_QUADS)
         glPopMatrix()
         
-
     def is_correct_target(self):
         return self.is_memory_target and self.is_response_target
-    
 
     def is_conflict_with(self, other_ball_sprites):
         for other_ball_sprite in other_ball_sprites:
@@ -95,21 +89,78 @@ class MultipleObjectTrackingSprite(object):
             if dist_sq < (dist_min * dist_min):
                 return True
         return False
-    
 
-    def move(self):
+    def check_cand_conflict(self, other_ball_sprites):
+        conflicted_ball_sprites = []
+        
+        for other_ball_sprite in other_ball_sprites:
+            dx = abs(self.cand_pos_x - other_ball_sprite.pos_x)
+            dy = abs(self.cand_pos_y - other_ball_sprite.pos_y)
+            dist_sq = dx*dx + dy*dy
+            dist_min = self.width*2
+            if dist_sq < (dist_min * dist_min):
+                conflicted_ball_sprites.append(other_ball_sprite)
+        return conflicted_ball_sprites
+
+    def _move_trial(self):
         dx = math.cos(self.direction) * MOVE_SPEED
         dy = math.sin(self.direction) * MOVE_SPEED
-
+        
+        # Move to temporal candidate pos
         self.cand_pos_x = self.pos_x + dx
         self.cand_pos_y = self.pos_y + dy
+    
+    def move(self, other_ball_sprites):
+        self.last_pos_x = self.pos_x
+        self.last_pos_y = self.pos_y
         
+        for wd_count in range(WATCH_DOG_COUNT):
+            # Move with current direction
+            self._move_trial()
+
+            # If hitting the wall
+            if self.is_out_of_wall():
+                # Randomize direction
+                self.randomize_direction()
+                continue
+
+            # Check conflict with other sprites
+            conflicted_sprites = self.check_cand_conflict(other_ball_sprites)
+            if len(conflicted_sprites) > 0:
+                if wd_count >= WATCH_DOG_COUNT-1:
+                    # When reaching last watchdog count
+                    for conflicted_sprite in conflicted_sprites:
+                        # Stop other balls and roll back to last pos, and randomize dir.
+                        conflicted_sprite.roll_back()
+                    # This ball also doesn't move.
+                    return
+                else:
+                    # Randomize
+                    self.randomize_direction()
+                    continue
+        # Fix position
+        self.fix_pos()
+
+    def is_out_of_wall(self):
+        min_pos = -1.0 * MOVE_REGION_RATE
+        max_pos = 1.0 * MOVE_REGION_RATE
+
+        # Check whether temporal candidate pos is out of wall
+        if self.cand_pos_x < min_pos or self.cand_pos_x > max_pos or \
+           self.cand_pos_y < min_pos or self.cand_pos_y > max_pos:
+            return True
+        else:
+            return False
+
+    def roll_back(self):
+        self.pos_x = self.last_pos_x
+        self.pos_y = self.last_pos_y
+        self.randomize_direction()
         
     def fix_pos(self):
         self.pos_x = self.cand_pos_x
         self.pos_y = self.cand_pos_y
         
-
 
 class MultipleObjectTrackingContent(BaseContent):
     def __init__(self):
@@ -169,33 +220,18 @@ class MultipleObjectTrackingContent(BaseContent):
                     else:
                         break
                     if wd_count == WATCH_DOG_COUNT-1:
-                        print("warning: watch dog reached")
-        
+                        print("warning: watch dog reached: initial position")
         
     def _is_target_correct(self):
         return self.ball_sprites[0].is_correct_target()
 
-
     def _move_ball_sprites(self):
         for i, ball_sprite in enumerate(self.ball_sprites):
-            ball_sprite.move()
-            ball_sprite.fix_pos()
-            
-            """
-            if i > 0:
-                for wd_count in range(WATCH_DOG_COUNT):
-                    if ball_sprite.is_conflict_with(self.ball_sprites[0:i]):
-                        ball_sprite.randomize_pos()
-                    else:
-                        break
-                    if wd_count == WATCH_DOG_COUNT-1:
-                        print("warning: watch dog reached")
-            """
-            
+            # Check conflict with wall and other balls, and then move it.
+            ball_sprite.move(self.ball_sprites[0:i])
             
     def _reset(self):
         self._move_to_start_phase()
-
 
     def _step(self, local_focus_pos):
         reward = 0
@@ -244,7 +280,6 @@ class MultipleObjectTrackingContent(BaseContent):
         done = self.step_count >= (MAX_STEP_COUNT - 1)
         return reward, done, need_render
 
-
     def _render(self):
         if self.phase == PHASE_START:
             self.start_sprite.render(self.common_quad_vlist)
@@ -254,7 +289,6 @@ class MultipleObjectTrackingContent(BaseContent):
             if self.phase == PHASE_RESPONSE:
                 self.button_sprite_no.render(self.common_quad_vlist)
                 self.button_sprite_yes.render(self.common_quad_vlist)
-
 
     def _move_to_start_phase(self):
         """ Change phase to red plus cursor showing. """
