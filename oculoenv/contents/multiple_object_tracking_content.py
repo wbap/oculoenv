@@ -4,11 +4,13 @@ from __future__ import division
 from __future__ import print_function
 
 import numpy as np
-import random
 import math
 from pyglet.gl import *
 
 from .base_content import BaseContent, ContentSprite
+
+DEBUGGING = False
+#..DEBUGGING = True
 
 PHASE_START = 0
 PHASE_MEMORY = 1
@@ -31,8 +33,10 @@ BALL_COLOR = [0.0, 0.0, 0.0]
 MAX_STEP_COUNT = 180 * 60
 
 MEMORY_STEP_COUNT = 60
-#..MEMORY_STEP_COUNT = 3
 MOVE_STEP_COUNT = 120
+
+if DEBUGGING:
+    MEMORY_STEP_COUNT = 3
 
 
 # In what percentage of the region, balls can move.
@@ -40,7 +44,7 @@ MOVE_REGION_RATE = 0.7
 
 MOVE_SPEED = 0.05
 
-WATCH_DOG_COUNT = 1000
+WATCH_DOG_COUNT = 200
 
 
 
@@ -82,25 +86,30 @@ class MultipleObjectTrackingSprite(object):
 
     def is_conflict_with(self, other_ball_sprites):
         for other_ball_sprite in other_ball_sprites:
-            dx = abs(self.pos_x - other_ball_sprite.pos_x)
-            dy = abs(self.pos_y - other_ball_sprite.pos_y)
+            dx = self.pos_x - other_ball_sprite.pos_x
+            dy = self.pos_y - other_ball_sprite.pos_y
             dist_sq = dx*dx + dy*dy
             dist_min = self.width*2
             if dist_sq < (dist_min * dist_min):
                 return True
         return False
 
-    def check_cand_conflict(self, other_ball_sprites):
-        conflicted_ball_sprites = []
+    def _check_illegal(self, other_ball_sprites, conflicted_ball_sprite_set):
+        illegal = False
         
+        if self._is_out_of_wall():
+            # If hitting the wall
+            illegal = True
+
         for other_ball_sprite in other_ball_sprites:
-            dx = abs(self.cand_pos_x - other_ball_sprite.pos_x)
-            dy = abs(self.cand_pos_y - other_ball_sprite.pos_y)
+            dx = self.cand_pos_x - other_ball_sprite.pos_x
+            dy = self.cand_pos_y - other_ball_sprite.pos_y
             dist_sq = dx*dx + dy*dy
             dist_min = self.width*2
             if dist_sq < (dist_min * dist_min):
-                conflicted_ball_sprites.append(other_ball_sprite)
-        return conflicted_ball_sprites
+                conflicted_ball_sprite_set.add(other_ball_sprite)
+                illegal = True
+        return illegal
 
     def _move_trial(self):
         dx = math.cos(self.direction) * MOVE_SPEED
@@ -113,23 +122,22 @@ class MultipleObjectTrackingSprite(object):
     def move(self, other_ball_sprites):
         self.last_pos_x = self.pos_x
         self.last_pos_y = self.pos_y
-        
+
+        conflicted_ball_sprite_set = set()
+
         for wd_count in range(WATCH_DOG_COUNT):
             # Move with current direction
             self._move_trial()
 
-            # If hitting the wall
-            if self.is_out_of_wall():
-                # Randomize direction
-                self.randomize_direction()
-                continue
-
             # Check conflict with other sprites
-            conflicted_sprites = self.check_cand_conflict(other_ball_sprites)
-            if len(conflicted_sprites) > 0:
+            conflicted = self._check_illegal(other_ball_sprites,
+                                             conflicted_ball_sprite_set)
+            if conflicted:
                 if wd_count >= WATCH_DOG_COUNT-1:
                     # When reaching last watchdog count
-                    for conflicted_sprite in conflicted_sprites:
+                    print("warning: watch dog reached: conflict when moving")
+                    
+                    for conflicted_sprite in conflicted_ball_sprite_set:
                         # Stop other balls and roll back to last pos, and randomize dir.
                         conflicted_sprite.roll_back()
                     # This ball also doesn't move.
@@ -138,10 +146,11 @@ class MultipleObjectTrackingSprite(object):
                     # Randomize
                     self.randomize_direction()
                     continue
+            break
         # Fix position
-        self.fix_pos()
+        self._fix_pos()
 
-    def is_out_of_wall(self):
+    def _is_out_of_wall(self):
         min_pos = -1.0 * MOVE_REGION_RATE
         max_pos = 1.0 * MOVE_REGION_RATE
 
@@ -157,7 +166,7 @@ class MultipleObjectTrackingSprite(object):
         self.pos_y = self.last_pos_y
         self.randomize_direction()
         
-    def fix_pos(self):
+    def _fix_pos(self):
         self.pos_x = self.cand_pos_x
         self.pos_y = self.cand_pos_y
         
