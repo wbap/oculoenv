@@ -10,7 +10,6 @@ from pyglet.gl import *
 from .base_content import BaseContent, ContentSprite
 
 DEBUGGING = False
-#..DEBUGGING = True
 
 PHASE_START = 0
 PHASE_MEMORY = 1
@@ -33,7 +32,7 @@ BALL_COLOR = [0.0, 0.0, 0.0]
 MAX_STEP_COUNT = 180 * 60
 
 MEMORY_STEP_COUNT = 60
-MOVE_STEP_COUNT = 120
+MOVE_STEP_COUNT = 90
 
 if DEBUGGING:
     MEMORY_STEP_COUNT = 3
@@ -94,20 +93,21 @@ class MultipleObjectTrackingSprite(object):
                 return True
         return False
 
-    def _check_illegal(self, other_ball_sprites, conflicted_ball_sprite_set):
+    def _check_illegal(self, ball_index, all_ball_sprites):
         illegal = False
         
         if self._is_out_of_wall():
             # If hitting the wall
             illegal = True
 
-        for other_ball_sprite in other_ball_sprites:
+        for i,other_ball_sprite in enumerate(all_ball_sprites):
+            if i == ball_index:
+                continue
             dx = self.cand_pos_x - other_ball_sprite.pos_x
             dy = self.cand_pos_y - other_ball_sprite.pos_y
             dist_sq = dx*dx + dy*dy
             dist_min = self.width*2
             if dist_sq < (dist_min * dist_min):
-                conflicted_ball_sprite_set.add(other_ball_sprite)
                 illegal = True
         return illegal
 
@@ -119,28 +119,18 @@ class MultipleObjectTrackingSprite(object):
         self.cand_pos_x = self.pos_x + dx
         self.cand_pos_y = self.pos_y + dy
     
-    def move(self, other_ball_sprites):
-        self.last_pos_x = self.pos_x
-        self.last_pos_y = self.pos_y
-
-        conflicted_ball_sprite_set = set()
-
+    def move(self, ball_index, all_ball_sprites):
         for wd_count in range(WATCH_DOG_COUNT):
             # Move with current direction
             self._move_trial()
 
             # Check conflict with other sprites
-            conflicted = self._check_illegal(other_ball_sprites,
-                                             conflicted_ball_sprite_set)
+            conflicted = self._check_illegal(ball_index, all_ball_sprites)
             if conflicted:
                 if wd_count >= WATCH_DOG_COUNT-1:
                     # When reaching last watchdog count
                     print("warning: watch dog reached: conflict when moving")
-                    
-                    for conflicted_sprite in conflicted_ball_sprite_set:
-                        # Stop other balls and roll back to last pos, and randomize dir.
-                        conflicted_sprite.roll_back()
-                    # This ball also doesn't move.
+                    # This ball doesn't move.
                     return
                 else:
                     # Randomize
@@ -161,11 +151,6 @@ class MultipleObjectTrackingSprite(object):
         else:
             return False
 
-    def roll_back(self):
-        self.pos_x = self.last_pos_x
-        self.pos_y = self.last_pos_y
-        self.randomize_direction()
-        
     def _fix_pos(self):
         self.pos_x = self.cand_pos_x
         self.pos_y = self.cand_pos_y
@@ -237,7 +222,7 @@ class MultipleObjectTrackingContent(BaseContent):
     def _move_ball_sprites(self):
         for i, ball_sprite in enumerate(self.ball_sprites):
             # Check conflict with wall and other balls, and then move it.
-            ball_sprite.move(self.ball_sprites[0:i])
+            ball_sprite.move(i, self.ball_sprites)
             
     def _reset(self):
         self._move_to_start_phase()
