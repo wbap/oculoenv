@@ -8,14 +8,17 @@ import pyglet
 import numpy as np
 import argparse
 
-from oculoenv import Environment, PointToTargetContent, OddOneOutContent, VisualSearchContent, ChangeDetectionContent
+from oculoenv import Environment
+from oculoenv import PointToTargetContent, ChangeDetectionContent, OddOneOutContent, VisualSearchContent, \
+    MultipleObjectTrackingContent
 
 
-class ContentEnum(object):
+class Contents(object):
     POINT_TO_TARGET = 1
     CHANGE_DETECTION = 2
     ODD_ONE_OUT = 3
     VISUAL_SEARCH = 4
+    MULTIPLE_OBJECT_TRACKING = 5
 
 
 class KeyEventListener(object):
@@ -64,18 +67,21 @@ class KeyEventListener(object):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--content", help="\n1: Point To Target\n2: Change Detection\n"
-                                          + "3: Odd One Out\n4: Visual Search", type=int)
+                                          + "3: Odd One Out\n4: Visual Search`\n"
+                                          + "5: Multiple Object Tracking", type=int)
 
     args = parser.parse_args()
 
-    if not args.content or args.content == ContentEnum.POINT_TO_TARGET:
+    if not args.content or args.content == Contents.POINT_TO_TARGET:
         content = PointToTargetContent(target_size="small", use_lure=True, lure_size="large")
-    elif args.content == ContentEnum.CHANGE_DETECTION:
+    elif args.content == Contents.CHANGE_DETECTION:
         content = ChangeDetectionContent(target_number=2, max_learning_count=20, max_interval_count=10)
-    elif args.content == ContentEnum.ODD_ONE_OUT:
+    elif args.content == Contents.ODD_ONE_OUT:
         content = OddOneOutContent()
-    elif args.content == ContentEnum.VISUAL_SEARCH:
+    elif args.content == Contents.VISUAL_SEARCH:
         content = VisualSearchContent()
+    elif args.content == Contents.MULTIPLE_OBJECT_TRACKING:
+        content = MultipleObjectTrackingContent()
     else:
         print("Unknown argument")
         sys.exit(1)
