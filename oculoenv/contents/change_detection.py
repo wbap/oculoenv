@@ -10,8 +10,6 @@ from .base_content import BaseContent, ContentSprite
 
 
 PLUS_MARKER_WIDTH = 0.15  # マーカーの半分の幅 (1.0で画面いっぱい)
-TARGET_WIDTH_SMALL = 0.1
-TARGET_WIDTH_LARGE = 0.2
 
 BUTTON_HALF_WIDTH = 0.1
 
@@ -71,10 +69,6 @@ class EightSquareGrid(object):
                 center = [center_x, center_y]
                 grid = Grid(center, self.half_width)
                 self.grids.append(grid)
-
-    def get_location(self, i_x, j_y):
-        index = j_y * self.side_section + i_x
-        return self.grids[index].center
 
     def get_random_location(self, number):
         samples = random.sample(self.grids, k=number)
