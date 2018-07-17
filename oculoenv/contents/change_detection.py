@@ -122,7 +122,7 @@ class ChangeDetectionContent(BaseContent):
 
         done = self.step_count >= (MAX_STEP_COUNT - 1)
 
-        # for evaluation phase, need_render -> reward order is important.
+        # Caution: for evaluation phase, need_render -> reward -> reset order is sensitive.
         need_render = self.current_phase.need_render(local_focus_pos)
         reward = self.current_phase.reward()
 
