@@ -108,7 +108,7 @@ class ChangeDetectionContent(BaseContent):
         self.start_phase = StartPhase(self.plus_sprite)
         self.interval_phase = IntervalPhase(self.max_interval_count)
 
-        self._set_sprites_to_phases()
+        self._create_learning_and_evaluation_phase()
 
         self.answer_state = AnswerState(box_texture)
 
@@ -136,7 +136,7 @@ class ChangeDetectionContent(BaseContent):
             elif self.current_phase == self.evaluation_phase:
                 self.current_phase = self.start_phase
                 self._prepare_target_sprites()
-                self._set_sprites_to_phases()
+                self._create_learning_and_evaluation_phase()
 
             self.current_phase.reset()
 
@@ -162,7 +162,7 @@ class ChangeDetectionContent(BaseContent):
                                    color=color)
             self.target_sprites.append(sprite)
 
-    def _set_sprites_to_phases(self):
+    def _create_learning_and_evaluation_phase(self):
         self.learning_phase = LearningPhase(self.target_sprites, self.max_learning_count)
 
         e_marker_texture = self.textures[0]
