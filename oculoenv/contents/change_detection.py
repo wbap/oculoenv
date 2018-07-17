@@ -7,7 +7,6 @@ import numpy as np
 import random
 
 from .base_content import BaseContent, ContentSprite
-from enum import Enum
 
 
 PLUS_MARKER_WIDTH = 0.15  # マーカーの半分の幅 (1.0で画面いっぱい)
@@ -18,70 +17,45 @@ BUTTON_HALF_WIDTH = 0.1
 
 MAX_STEP_COUNT = 180 * 60
 
-MIN_INTERVAL_COUNT = 0.2 * 60
-MAX_INTERVAL_COUNT = 0.4 * 60
-
-LEARNING_COUNT = 0.3 * 60
-
 TARGET_CHANGE_THRESHOLD = 0.6
 
+MAGENDA = [1.0, 0.0, 0.75]
+ORANGE = [1.0, 0.75, 0.0]
+LIGHT_BLUE = [0.0, 1.0, 1.0]
+BLUE = [0.0, 0.25, 1.0]
+DEEP_PURPLE = [0.5, 0.0, 1.0]
+BLACK = [0.0, 0.0, 0.0]
+WHITE = [1.0, 1.0, 1.0]
 
-class Phase(Enum):
-    START = 0
-    LEARNING = 1
-    INTERVAL = 2
-    EVALUATION = 3
+TargetColors = [
+    MAGENDA,
+    ORANGE,
+    LIGHT_BLUE,
+    BLUE,
+    DEEP_PURPLE
+]
+
+YES_BUTTON_POS = [-0.9, 0.0]
+NO_BUTTON_POS = [0.9, 0.0]
 
 
-class TargetColors(Enum):
-    MAGENDA = [1.0, 0.0, 0.75]
-    ORANGE = [1.0, 0.75, 0.0]
-    LIGHT_BLUE = [0.0, 1.0, 1.0]
-    BLUE = [0.0, 0.25, 1.0]
-    DEEP_PURPLE = [0.5, 0.0, 1.0]
-
-
-class PartsColor(Enum):
-    BLACK = [0.0, 0.0, 0.0]
-    WHITE = [1.0, 1.0, 1.0]
-
-
-class AnswerBoxHit(Enum):
+class AnswerBoxHit(object):
     NONE = 0
     YES = 1
     NO = 2
 
 
-class Quadrant(object):
+class Grid(object):
     """def __new__(cls):
         self = super.__new__(cls)
         return self"""
 
-    def __init__(self, center, width_left, width_right, width_top, width_bottom):
+    def __init__(self, center, half_width):
         self.center = center
-        self.width_left = width_left
-        self.width_right = width_right
-        self.width_top = width_top
-        self.width_bottom = width_bottom
-
-    def get_random_location(self, target_width):
-        """ Get random location in this quadrant given target size.
-            Arguments:
-                target_width: Float, half width of the target
-            Returns:
-                (Float, Float) Position of the random target location in this quadrant.
-          """
-        minx = self.center[0] - self.width_left + target_width
-        maxx = self.center[0] + self.width_right - target_width
-        miny = self.center[1] - self.width_bottom + target_width
-        maxy = self.center[1] + self.width_top - target_width
-
-        x = np.random.uniform(low=minx, high=maxx)
-        y = np.random.uniform(low=miny, high=maxy)
-        return (x, y)
+        self.half_width = half_width
 
 
-class EightSquareQuadrantWrapper(object):
+class EightSquareGrid(object):
     side_section = 8
     width = 0.2
     half_width = width/2
@@ -90,24 +64,20 @@ class EightSquareQuadrantWrapper(object):
     centers_y = [-0.7, -0.5, -0.3, -0.1, 0.1, 0.3, 0.5, 0.7]
 
     def __init__(self):
-        self.quadrants = []
+        self.grids = []
 
         for center_y in self.centers_y:
             for center_x in self.centers_x:
                 center = [center_x, center_y]
-                quadrant = Quadrant(center,
-                                    self.half_width,
-                                    self.half_width,
-                                    self.half_width,
-                                    self.half_width)
-                self.quadrants.append(quadrant)
+                grid = Grid(center, self.half_width)
+                self.grids.append(grid)
 
     def get_location(self, i_x, j_y):
         index = j_y * self.side_section + i_x
-        return self.quadrants[index].center
+        return self.grids[index].center
 
     def get_random_location(self, number):
-        samples = random.sample(self.quadrants, k=number)
+        samples = random.sample(self.grids, k=number)
         centers = []
         for sample in samples:
             centers.append(sample.center)
@@ -115,33 +85,75 @@ class EightSquareQuadrantWrapper(object):
 
 
 class ChangeDetectionContent(BaseContent):
-    def __init__(self):
+    def __init__(self, target_number, max_learning_count, max_interval_count):
+        self.quadrants = EightSquareGrid()
+        self.target_number = target_number
+        self.max_learning_count = max_learning_count
+        self.max_interval_count = max_interval_count
+
         super(ChangeDetectionContent, self).__init__()
-        self.yes_button_pos = [-0.9, 0.0]
-        self.no_button_pos = [0.9, 0.0]
 
     def _init(self):
-        self.quadrants = EightSquareQuadrantWrapper()
         start_marker_texture = self._load_texture('start_marker0.png')
-        # (1.0, 1.0)が右上の座標
         self.plus_sprite = ContentSprite(start_marker_texture, 0.0, 0.0,
                                          PLUS_MARKER_WIDTH)
 
         e_marker_texture = self._load_texture('general_e0.png')
         box_texture = self._load_texture('white0.png')
 
-        # TODO: Initial content sprites should be created in another method.
         self.textures = [e_marker_texture, box_texture]
 
-        target_number = np.random.random_integers(2, 4)
-        centers = self.quadrants.get_random_location(target_number)
+        self._prepare_target_sprites()
+
+        self.start_phase = StartPhase(self.plus_sprite)
+        self.interval_phase = IntervalPhase(self.max_interval_count)
+
+        self._set_sprites_to_phases()
+
+        self.answer_state = AnswerState(box_texture)
+
+        self.current_phase = self.start_phase
+
+    def _reset(self):
+        pass
+
+    def _step(self, local_focus_pos):
+        self.current_phase.step()
+
+        done = self.step_count >= (MAX_STEP_COUNT - 1)
+
+        # for evaluation phase, need_render -> reward order is important.
+        need_render = self.current_phase.need_render(local_focus_pos)
+        reward = self.current_phase.reward()
+
+        if need_render:
+            if self.current_phase == self.start_phase:
+                self.current_phase = self.learning_phase
+            elif self.current_phase == self.learning_phase:
+                self.current_phase = self.interval_phase
+            elif self.current_phase == self.interval_phase:
+                self.current_phase = self.evaluation_phase
+            elif self.current_phase == self.evaluation_phase:
+                self.current_phase = self.start_phase
+                self._prepare_target_sprites()
+                self._set_sprites_to_phases()
+
+            self.current_phase.reset()
+
+        print('step=%s, phase=%s' % (self.step_count, self.current_phase))
+
+        return reward, done, need_render
+
+    def _render(self):
+        self.current_phase.render(self.common_quad_vlist)
+
+    def _prepare_target_sprites(self):
+        centers = self.quadrants.get_random_location(self.target_number)
+
         self.target_sprites = []
         for center in centers:
-            tex_index = np.random.random_integers(0, 1)
-            texture = self.textures[tex_index]
-
-            color_index = np.random.random_integers(0, len(TargetColors) - 1)
-            color = list(TargetColors)[color_index].value
+            texture = random.choice(self.textures)
+            color = random.choice(TargetColors)
 
             sprite = ContentSprite(tex=texture,
                                    pos_x=center[0],
@@ -150,88 +162,108 @@ class ChangeDetectionContent(BaseContent):
                                    color=color)
             self.target_sprites.append(sprite)
 
-        self.answer_state = AnswerButtonState(box_texture)
+    def _set_sprites_to_phases(self):
+        self.learning_phase = LearningPhase(self.target_sprites, self.max_learning_count)
 
-        self.phase = Phase.START
+        e_marker_texture = self.textures[0]
+        box_texture = self.textures[1]
+        self.evaluation_phase = EvaluationPhase(self.target_sprites, box_texture, e_marker_texture)
 
-    def _reset(self):
+
+class AbstractPhase(object):
+    def step(self):
+        raise NotImplementedError()
+
+    def reset(self):
+        raise NotImplementedError()
+
+    def need_render(self, local_focus_pos):
+        raise NotImplementedError()
+
+    def reward(self):
+        raise NotImplementedError()
+
+    def render(self, common_quad_vlist):
+        raise NotImplementedError()
+
+
+class StartPhase(AbstractPhase):
+    def __init__(self, plus_sprite):
+        self.plus_sprite = plus_sprite
+
+    def step(self):
         pass
 
-    def _step(self, local_focus_pos):
-        reward = 0
+    def reset(self):
+        pass
 
-        need_render = False
-        done = self.step_count >= (MAX_STEP_COUNT - 1)
-        print('step=%s' % self.step_count)
-        print('phase=%s' % self.phase)
+    def need_render(self, local_focus_pos):
+        return self.plus_sprite.contains(local_focus_pos)
 
-        if self.phase == Phase.START:
-            if not self.plus_sprite.contains(local_focus_pos):
-                return reward, done, need_render
+    def reward(self):
+        return 0
 
-            # When hitting the red plus cursor
-            self._go_into_learning_phase()
-            need_render = True
-        elif self.phase == Phase.LEARNING:
-            self.learning_count += 1
+    def render(self, common_quad_vlist):
+        self.plus_sprite.render(common_quad_vlist)
 
-            if self.learning_count < LEARNING_COUNT:
-                return reward, done, need_render
 
-            self._go_into_interval_phase()
-            need_render = True
-        elif self.phase == Phase.INTERVAL:
-            self.interval_count += 1
-
-            print('interval=%s' % self.interval_count)
-
-            if self.interval_count < MAX_INTERVAL_COUNT:  # TODO: change interval count randomly.
-                return reward, done, need_render
-
-            self._go_into_evaluation_phase()
-            need_render = True
-        elif self.phase == Phase.EVALUATION:
-            hit_type = self.answer_state.detect_hit(local_focus_pos)
-
-            if hit_type == AnswerBoxHit.NONE:
-                return reward, done, need_render
-
-            reward = self.evaluate_answer(hit_type)
-            self._go_into_start_phase()
-            need_render = True
-
-        return reward, done, need_render
-
-    def _render(self):
-        if self.phase == Phase.START:
-            self.plus_sprite.render(self.common_quad_vlist)
-            return
-
-        if self.phase == Phase.INTERVAL:
-            return
-
-        for sprite in self.target_sprites:  # Phase.LEARNING or Phase.EVALUATION
-            sprite.render(self.common_quad_vlist)
-
-        if self.phase == Phase.EVALUATION:
-            self.answer_state.render(self.common_quad_vlist)
-
-    def _go_into_start_phase(self):
-        """ Change phase to red plus cursor showing. """
-        self.phase = Phase.START
-
-    def _go_into_learning_phase(self):
+class LearningPhase(AbstractPhase):
+    def __init__(self, target_sprites, max_learning_count):
+        self.target_sprites = target_sprites
         self.learning_count = 0
-        self.phase = Phase.LEARNING
+        self.max_learning_count = max_learning_count
 
-    def _go_into_interval_phase(self):
+    def step(self):
+        self.learning_count += 1
+
+    def reset(self):
+        self.learning_count = 0
+
+    def need_render(self, local_focus_pos):
+        return self.learning_count >= self.max_learning_count
+
+    def reward(self):
+        return 0
+
+    def render(self, common_quad_vlist):
+        for sprite in self.target_sprites:  # Phase.LEARNING or Phase.EVALUATION
+            sprite.render(common_quad_vlist)
+
+
+class IntervalPhase(AbstractPhase):
+    def __init__(self, max_interval_count):
         self.interval_count = 0
-        self.phase = Phase.INTERVAL
+        self.max_interval_count = max_interval_count
 
-    def _go_into_evaluation_phase(self):
-        """ Change phase to target showing. """
-        self.phase = Phase.EVALUATION
+    def step(self):
+        self.interval_count += 1
 
+    def reset(self):
+        self.interval_count = 0
+
+    def need_render(self, local_focus_pos):
+        return self.interval_count >= self.max_interval_count
+
+    def reward(self):
+        return 0
+
+    def render(self, common_quad_vlist):
+        pass
+
+
+class EvaluationPhase(AbstractPhase):
+    def __init__(self, target_sprites, box_texture, e_marker_texture):
+        self.target_sprites = target_sprites
+        self.answer_state = AnswerState(box_texture)
+        self.textures = [box_texture, e_marker_texture]
+
+        self.is_changed = False
+        self.hit_type = AnswerBoxHit.NONE
+
+    def step(self):
+        pass
+
+    def reset(self):
         if np.random.rand() < TARGET_CHANGE_THRESHOLD:
             self.is_changed = False
             return
@@ -248,12 +280,31 @@ class ChangeDetectionContent(BaseContent):
             self._change_color(sprite)
             self._change_texture(sprite)
 
-    def _change_color(self, sprite):
-        next_color = np.random.choice(TargetColors)
-        while next_color.value == sprite.color:
-            next_color = np.random.choice(TargetColors)
+    def need_render(self, local_focus_pos):
+        self.hit_type = self.answer_state.detect_hit(local_focus_pos)
+        return self.hit_type == AnswerBoxHit.YES or self.hit_type == AnswerBoxHit.NO
 
-        sprite.color = next_color.value
+    def reward(self):
+        reward = 0
+        if self.hit_type == AnswerBoxHit.YES and self.is_changed:
+            reward = 1
+        elif self.hit_type == AnswerBoxHit.NO and not self.is_changed:
+            reward = 1
+
+        return reward
+
+    def render(self, common_quad_vlist):
+        for sprite in self.target_sprites:  # Phase.LEARNING or Phase.EVALUATION
+            sprite.render(common_quad_vlist)
+
+        self.answer_state.render(common_quad_vlist)
+
+    def _change_color(self, sprite):
+        next_color = random.choice(TargetColors)
+        while next_color == sprite.color:
+            next_color = random.choice(TargetColors)
+
+        sprite.color = next_color
 
     def _change_texture(self, sprite):
         if sprite.tex == self.textures[0]:
@@ -261,20 +312,11 @@ class ChangeDetectionContent(BaseContent):
         else:
             sprite.tex = self.textures[0]
 
-    def evaluate_answer(self, hit_type):
-        reward = 0
-        if hit_type == AnswerBoxHit.YES and self.is_changed:
-            reward = 1
-        elif hit_type == AnswerBoxHit.NO and not self.is_changed:
-            reward = 1
 
-        return reward
-
-
-class AnswerButtonState(object):
+class AnswerState(object):
     def __init__(self, texture):
-        self.yes_button = YesButton(texture)
-        self.no_button = NoButton(texture)
+        self.yes_button = AnswerButtonSprite(texture, YES_BUTTON_POS)
+        self.no_button = AnswerButtonSprite(texture, NO_BUTTON_POS)
 
     def detect_hit(self, local_focus_pos):
         if self.yes_button.contains(local_focus_pos):
@@ -290,28 +332,12 @@ class AnswerButtonState(object):
 
 
 class AnswerButtonSprite(ContentSprite):
-    def __init__(self, texture):
+    def __init__(self, texture, position):
         super(ContentSprite, self).__init__()
 
         self.tex = texture
         self.width = BUTTON_HALF_WIDTH
         self.rot_index = 0
-        self.color = PartsColor.BLACK.value
-
-
-class YesButton(AnswerButtonSprite):
-    def __init__(self, texture):
-        super(YesButton, self).__init__(texture)
-
-        self.pos_x = 0.9
-        self.pos_y = 0
-
-
-class NoButton(AnswerButtonSprite):
-    def __init__(self, texture):
-        super(NoButton, self).__init__(texture)
-
-        self.pos_x = -0.9
-        self.pos_y = 0
-
-
+        self.color = BLACK
+        self.pos_x = position[0]
+        self.pos_y = position[1]
