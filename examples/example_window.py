@@ -15,9 +15,11 @@ from oculoenv import Environment, PointToTargetContent, OddOneOutContent, Visual
 class ContentEnum(Enum):
     POINT_TO_TARGET = 1
     CHANGE_DETECTION = 2
+    ODD_ONE_OUT = 3
+    VISUAL_SEARCH = 4
 
 
-class KeyEventListner(object):
+class KeyEventListener(object):
     def __init__(self, env):
         self.env = env
         self.env.window.push_handlers(self.on_key_press)
@@ -67,16 +69,22 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if not args.content or args.content == ContentEnum.POINT_TO_TARGET:
+    if not args.content or args.content == ContentEnum.POINT_TO_TARGET.value:
         content = PointToTargetContent(target_size="small", use_lure=True, lure_size="large")
-    elif args.content == ContentEnum.CHANGE_DETECTION:
+    elif args.content == ContentEnum.CHANGE_DETECTION.value:
         content = ChangeDetectionContent()
+    elif args.content == ContentEnum.ODD_ONE_OUT.value:
+        content = OddOneOutContent()
+    elif args.content == ContentEnum.VISUAL_SEARCH.value:
+        content = VisualSearchContent()
     else:
         print("Unknown argument")
         sys.exit(1)
 
     env = Environment(content)
     env.render()  # env.window is created here
+
+    listener = KeyEventListener(env)
 
     pyglet.app.run()
 
