@@ -6,13 +6,12 @@ from __future__ import print_function
 import sys
 import pyglet
 import numpy as np
-from enum import Enum
 import argparse
 
 from oculoenv import Environment, PointToTargetContent, OddOneOutContent, VisualSearchContent, ChangeDetectionContent
 
 
-class ContentEnum(Enum):
+class ContentEnum(object):
     POINT_TO_TARGET = 1
     CHANGE_DETECTION = 2
     ODD_ONE_OUT = 3
@@ -69,13 +68,13 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if not args.content or args.content == ContentEnum.POINT_TO_TARGET.value:
+    if not args.content or args.content == ContentEnum.POINT_TO_TARGET:
         content = PointToTargetContent(target_size="small", use_lure=True, lure_size="large")
-    elif args.content == ContentEnum.CHANGE_DETECTION.value:
-        content = ChangeDetectionContent()
-    elif args.content == ContentEnum.ODD_ONE_OUT.value:
+    elif args.content == ContentEnum.CHANGE_DETECTION:
+        content = ChangeDetectionContent(target_number=2, max_learning_count=20, max_interval_count=10)
+    elif args.content == ContentEnum.ODD_ONE_OUT:
         content = OddOneOutContent()
-    elif args.content == ContentEnum.VISUAL_SEARCH.value:
+    elif args.content == ContentEnum.VISUAL_SEARCH:
         content = VisualSearchContent()
     else:
         print("Unknown argument")
