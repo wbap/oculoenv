@@ -7,7 +7,8 @@ import unittest
 import numpy as np
 import math
 
-from oculoenv.contents.random_dot_content import RandomDotMotionDiscriminationContent
+from oculoenv.contents.random_dot_content import RandomDotMotionDiscriminationContent,\
+    PHASE_START, PHASE_RESPONSE, ARROW_HIT_NONE, ARROW_HIT_INCORRECT, ARROW_HIT_CORRECT
 
 
 class TestRandomDotMotionDiscriminationContent(unittest.TestCase):
@@ -15,7 +16,7 @@ class TestRandomDotMotionDiscriminationContent(unittest.TestCase):
     def test_peformance_check(self):
         import time
         
-        content = RandomDotMotionDiscriminatorContent()
+        content = RandomDotMotionDiscriminationContent()
 
         for i in range(100):
             x = 0
@@ -27,8 +28,40 @@ class TestRandomDotMotionDiscriminationContent(unittest.TestCase):
             print ("elapsed_time:{0}".format(elapsed_time) + "[sec]")
     """
 
+    def test_reset(self):
+        content = RandomDotMotionDiscriminationContent()
+        content.reset()
+        self.assertEqual(content.phase, PHASE_START)
+
+    def test_check_arrow_hit(self):
+        content = RandomDotMotionDiscriminationContent()
+        content.current_direction_index = 0
+
+        # Check focus pos and hit results
+        hit_correct = content._check_arrow_hit((0.8, 0.0))
+        self.assertEqual(hit_correct, ARROW_HIT_CORRECT)
+
+        hit_incorrect = content._check_arrow_hit((-0.8, 0.0))
+        self.assertEqual(hit_incorrect, ARROW_HIT_INCORRECT)
+
+        hit_none = content._check_arrow_hit((0.0, 0.0))
+        self.assertEqual(hit_none, ARROW_HIT_NONE)
+
+    def test_move_to_start_phase(self):
+        content = RandomDotMotionDiscriminationContent()
+        content._move_to_start_phase()
+        
+        self.assertEqual(content.phase, PHASE_START)
+
+    def test_move_to_response_phase(self):
+        content = RandomDotMotionDiscriminationContent()
+        content._move_to_response_phase()
+        
+        self.assertEqual(content.phase, PHASE_RESPONSE)
+        self.assertTrue(0 <= content.current_direction_index < 8)
+
     def test_step(self):
-        content = RandomDotMotionDiscriminatorContent()
+        content = RandomDotMotionDiscriminationContent()
 
         step_size = 180 * 60
 
@@ -44,7 +77,6 @@ class TestRandomDotMotionDiscriminationContent(unittest.TestCase):
             else:
                 # Otherwise done is False
                 self.assertFalse(done)
-
 
 if __name__ == '__main__':
     unittest.main()
