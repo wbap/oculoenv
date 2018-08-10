@@ -83,9 +83,9 @@ class DotSprite(object):
 
     
 
-class RandomDotMotionDiscriminatorContent(BaseContent):
+class RandomDotMotionDiscriminationContent(BaseContent):
     def __init__(self):
-        super(RandomDotMotionDiscriminatorContent, self).__init__(bg_color=[0.0, 0.0, 0.0, 1.0])
+        super(RandomDotMotionDiscriminationContent, self).__init__(bg_color=[0.0, 0.0, 0.0, 1.0])
 
     def _init(self):
         start_marker_texture = self._load_texture('start_marker0.png')

@@ -7,10 +7,10 @@ import unittest
 import numpy as np
 import math
 
-from oculoenv.contents.random_dot_content import RandomDotMotionDiscriminatorContent
+from oculoenv.contents.random_dot_content import RandomDotMotionDiscriminationContent
 
 
-class TestRandomDotMotionDiscriminatorContent(unittest.TestCase):
+class TestRandomDotMotionDiscriminationContent(unittest.TestCase):
     """
     def test_peformance_check(self):
         import time
