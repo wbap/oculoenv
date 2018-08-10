@@ -7,7 +7,7 @@ import sys
 import pyglet
 import numpy as np
 
-from oculoenv import Environment, PointToTargetContent, OddOneOutContent, VisualSearchContent, MultipleObjectTrackingContent
+from oculoenv import Environment, PointToTargetContent, OddOneOutContent, VisualSearchContent, MultipleObjectTrackingContent, RandomDotMotionDiscriminatorContent
 
 content = PointToTargetContent(target_size="small",
                                use_lure=True,
@@ -15,6 +15,7 @@ content = PointToTargetContent(target_size="small",
 #content = OddOneOutContent()
 #content = VisualSearchContent()
 #content = MultipleObjectTrackingContent()
+#content = RandomDotMotionDiscriminatorContent()
 
 env = Environment(content)
 env.render()  # env.window is created here

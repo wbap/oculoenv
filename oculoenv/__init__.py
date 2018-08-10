@@ -3,3 +3,4 @@ from oculoenv.contents.point_to_target_content import PointToTargetContent
 from oculoenv.contents.odd_one_out_content import OddOneOutContent
 from oculoenv.contents.visual_search_content import VisualSearchContent
 from oculoenv.contents.multiple_object_tracking_content import MultipleObjectTrackingContent
+from oculoenv.contents.random_dot_content import RandomDotMotionDiscriminatorContent

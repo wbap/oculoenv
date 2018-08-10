@@ -10,7 +10,7 @@ import math
 from oculoenv.contents.multiple_object_tracking_content import MultipleObjectTrackingContent, BALL_WIDTH, MOVE_REGION_RATE
 
 
-class TestVisualSearchContent(unittest.TestCase):
+class TestMultipleObjectTrackingContent(unittest.TestCase):
     def check_ball_conflict(self, ball_sprites):
         dist_min_sq = (BALL_WIDTH*2) * (BALL_WIDTH*2)
         
