@@ -21,6 +21,11 @@ Task contents are mostly compatible with [Psychlab](https://arxiv.org/abs/1801.0
 
 ![multiple object traking task](./docs/images/multiple_object_tracking_task.png)
 
+### Random dot motion discrimination
+
+![random dot motion discrimination task](./docs/images/random_dot_task.png)
+
+
 # Example
 
 ```python

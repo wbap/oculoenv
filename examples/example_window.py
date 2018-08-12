@@ -10,7 +10,7 @@ import argparse
 
 from oculoenv import Environment
 from oculoenv import PointToTargetContent, ChangeDetectionContent, OddOneOutContent, VisualSearchContent, \
-    MultipleObjectTrackingContent
+    MultipleObjectTrackingContent, RandomDotMotionDiscriminationContent
 
 
 class Contents(object):
@@ -19,16 +19,16 @@ class Contents(object):
     ODD_ONE_OUT = 3
     VISUAL_SEARCH = 4
     MULTIPLE_OBJECT_TRACKING = 5
+    RANDOM_DOT_MOTION_DISCRIMINATION = 6
 
 
-class KeyEventListener(object):
+class KeyHandler(object):
     def __init__(self, env):
         self.env = env
         self.env.window.push_handlers(self.on_key_press)
 
     def on_key_press(self, symbol, modifiers):
         from pyglet.window import key
-
         action = None
         if symbol == key.LEFT:
             print('left')
@@ -67,8 +67,10 @@ class KeyEventListener(object):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--content", help="\n1: Point To Target\n2: Change Detection\n"
-                                          + "3: Odd One Out\n4: Visual Search`\n"
-                                          + "5: Multiple Object Tracking", type=int)
+                                          + "3: Odd One Out\n4: Visual Search\n"
+                                          + "5: Multiple Object Tracking\n"
+                                          + "6: Random Dot Motion Descrimination",
+                        type=int)
 
     args = parser.parse_args()
 
@@ -82,6 +84,8 @@ if __name__ == '__main__':
         content = VisualSearchContent()
     elif args.content == Contents.MULTIPLE_OBJECT_TRACKING:
         content = MultipleObjectTrackingContent()
+    elif args.content == Contents.RANDOM_DOT_MOTION_DISCRIMINATION:
+        content = RandomDotMotionDiscriminationContent()
     else:
         print("Unknown argument")
         sys.exit(1)
@@ -89,7 +93,7 @@ if __name__ == '__main__':
     env = Environment(content)
     env.render()  # env.window is created here
 
-    listener = KeyEventListener(env)
+    handler = KeyHandler(env)
 
     pyglet.app.run()
 

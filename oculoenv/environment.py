@@ -136,13 +136,21 @@ class Camera(object):
 class Environment(object):
     """ Task Environmenet class. """
 
-    def __init__(self, content):
+    def __init__(self, content, off_buffer_width=128, on_buffer_width=640):
+        """ Oculomotor task environment class.
+
+        Arguments:
+          content: (Content) object
+          off_buffer_width: (int) pixel width and height size of offscreen render buffer.
+          on_buffer_width: (int) pixel width and height size of display window.
+        """
+        
         # Invisible window to render into (shadow OpenGL context)
         self.shadow_window = pyglet.window.Window(
             width=1, height=1, visible=False)
 
-        self.frame_buffer_off = FrameBuffer(128, 128)
-        self.frame_buffer_on = FrameBuffer(640, 640)
+        self.frame_buffer_off = FrameBuffer(off_buffer_width, off_buffer_width)
+        self.frame_buffer_on = FrameBuffer(on_buffer_width, on_buffer_width)
 
         self.camera = Camera()
 

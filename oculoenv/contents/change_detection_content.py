@@ -44,10 +44,6 @@ class AnswerBoxHit(object):
 
 
 class Grid(object):
-    """def __new__(cls):
-        self = super.__new__(cls)
-        return self"""
-
     def __init__(self, center, half_width):
         self.center = center
         self.half_width = half_width
@@ -133,8 +129,6 @@ class ChangeDetectionContent(BaseContent):
                 self._create_learning_and_evaluation_phase()
 
             self.current_phase.reset()
-
-        print('step=%s, phase=%s' % (self.step_count, self.current_phase))
 
         return reward, done, need_render
 
@@ -265,14 +259,19 @@ class EvaluationPhase(AbstractPhase):
         self.is_changed = True
         sprite = np.random.choice(self.target_sprites)
 
-        rand_num = np.random.random_integers(0, 2)
+        if sprite.tex == self.textures[0]:
+            # When randomimze target sprite is box texture, we cannot choose random rotaion.
+            rand_num = np.random.random_integers(0, 1)
+        else:
+            # When randomimze target sprite is E texture, we can choose random rotation too.
+            rand_num = np.random.random_integers(0, 2)
+            
         if rand_num == 0:
             self._change_color(sprite)
         elif rand_num == 1:
             self._change_texture(sprite)
         elif rand_num == 2:
-            self._change_color(sprite)
-            self._change_texture(sprite)
+            self._change_rotation(sprite)
 
     def need_render(self, local_focus_pos):
         self.hit_type = self.answer_state.detect_hit(local_focus_pos)
@@ -306,6 +305,13 @@ class EvaluationPhase(AbstractPhase):
         else:
             sprite.tex = self.textures[0]
 
+    def _change_rotation(self, sprite):
+        rot_index_candidates = []
+        for i in range(4):
+            if i != sprite.rot_index:
+                rot_index_candidates.append(i)
+        new_rot_index = random.choice(rot_index_candidates)
+        sprite.rot_index = new_rot_index
 
 class AnswerState(object):
     def __init__(self, texture):
