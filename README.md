@@ -9,6 +9,10 @@ Task contents are mostly compatible with [Psychlab](https://arxiv.org/abs/1801.0
 
 ![point to target task](./docs/images/point_to_target_task.png)
 
+### Change detection
+
+![change detection task](./docs/images/change_detection_task.png)
+
 ### Visual search
 
 ![visual search task](./docs/images/visual_search_task.png)
