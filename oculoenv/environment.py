@@ -98,8 +98,8 @@ class Camera(object):
         self.m = m1.mul(m0)
 
     def reset(self):
-        self.cur_angle_v = CAMERA_INITIAL_ANGLE_V  # Vertical
         self.cur_angle_h = 0  # Horizontal
+        self.cur_angle_v = CAMERA_INITIAL_ANGLE_V  # Vertical
 
         self._update_mat()
 
@@ -112,15 +112,16 @@ class Camera(object):
         v = self.m.get_axis(2)  # Get z-axis
         return -1.0 * v  # forward direction is minus z-axis of the matrix
 
-    def change_angle(self, d_angle_v, d_angle_h):
-        self.cur_angle_v += d_angle_v  # top-down angle
+    def change_angle(self, d_angle_h, d_angle_v):
         self.cur_angle_h += d_angle_h  # left-right angle
-
-        self.cur_angle_v = clamp(self.cur_angle_v, -CAMERA_VERTICAL_ANGLE_MAX,
-                                 CAMERA_VERTICAL_ANGLE_MAX)
+        self.cur_angle_v += d_angle_v  # top-down angle
+        
         self.cur_angle_h = clamp(self.cur_angle_h,
                                  -CAMERA_HORIZONTAL_ANGLE_MAX,
-                                 CAMERA_HORIZONTAL_ANGLE_MAX)
+                                 CAMERA_HORIZONTAL_ANGLE_MAX)        
+        self.cur_angle_v = clamp(self.cur_angle_v, -CAMERA_VERTICAL_ANGLE_MAX,
+                                 CAMERA_VERTICAL_ANGLE_MAX)
+
         self._update_mat()
 
     def get_inv_mat(self):
@@ -172,10 +173,32 @@ class Environment(object):
         obj = SceneObject("frame0", pos=[0.0, 0.0, -PLANE_DISTANCE], scale=2.0)
         self.objects.append(obj)
 
+    def _get_observation(self):
+        # Get rendered image
+        image = self._render_offscreen()
+        
+        # Current absolute camera angle
+        angle = (self.camera.cur_angle_h, self.camera.cur_angle_v)
+        
+        obs = {
+            "screen":image,
+            "angle":angle
+        }
+
+        return obs
+
     def reset(self):
+        """ Reset environment.
+        
+        Returns:
+          Dictionary
+            "screen" numpy ndarray (Rendered Image)
+            "angle" (horizontal angle, vertical angle) Absoulte angles of the camera
+        """
+        
         self.content.reset()
         self.camera.reset()
-        return self._render_offscreen()
+        return self._get_observation()
 
     def _calc_local_focus_pos(self, camera_forward_v):
         """ Calculate local coordinate of view focus point on the content panel. """
@@ -189,15 +212,31 @@ class Environment(object):
         return [local_x, local_y]
 
     def step(self, action):
-        d_angle_v = action[0]  # top-down angle
-        d_angle_h = action[1]  # left-right angle
-        self.camera.change_angle(d_angle_v, d_angle_h)
+        """ Execute one environment step. 
+        
+        Arguments:
+          action: Float array, (horizonal delta angle, vertical delta angle) in radian.
+        
+        Returns:
+          obs, reward, done, info
+            obs: Dictionary
+              "screen" numpy ndarray (Rendered Image)
+              "angle" (horizontal angle, vertical angle) Absoulte angles of the camera
+            reward: (Float) Reward 
+            done: (Bool) Terminate flag
+            info: Empty dictionary
+        """
+        
+        d_angle_h = action[0]  # left-right angle
+        d_angle_v = action[1]  # top-down angle
+        
+        self.camera.change_angle(d_angle_h, d_angle_v)
 
         camera_forward_v = self.camera.get_forward_vec()
         local_focus_pos = self._calc_local_focus_pos(camera_forward_v)
         reward, done = self.content.step(local_focus_pos)
 
-        obs = self._render_offscreen()
+        obs = self._get_observation()
 
         return obs, reward, done, {}
 
