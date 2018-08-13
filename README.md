@@ -77,6 +77,8 @@ for i in range(100):
     if done:
         print("Episode terminated")
         obs = env.reset()
+        
+    image = obs['screen']
 ```
 
 
