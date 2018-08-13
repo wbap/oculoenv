@@ -94,6 +94,8 @@ class KeyHandler(object):
             action = np.array([dv, dh])
             # Step environment
             obs, reward, done, info = self.env.step(action)
+            if reward != 0:
+                print("reward = {}".format(reward))
 
             if done:
                 print('done!')
