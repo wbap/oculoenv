@@ -17,10 +17,9 @@ START_MARKER_WIDTH = 0.15  # マーカーの半分の幅 (1.0で画面いっぱ�
 MAX_STEP_COUNT = 180 * 60
 
 DOT_NUM = 100
-#DOT_HALF_WIDTH = 0.015
 DOT_HALF_WIDTH = 0.02
 
-DOT_SPEED = 0.02
+DOT_SPEED = 0.03
 
 # Gaussian standatd deviation for color attenuation calculation
 ATTENUATE_GAUSSIAN_SIGMA_SQ = (0.2 * 0.2)
