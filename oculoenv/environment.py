@@ -176,6 +176,9 @@ class Environment(object):
     def _get_observation(self):
         # Get rendered image
         image = self._render_offscreen()
+
+        # Change upside-down
+        image = np.flip(image, 0)
         
         # Current absolute camera angle
         angle = (self.camera.cur_angle_h, self.camera.cur_angle_v)

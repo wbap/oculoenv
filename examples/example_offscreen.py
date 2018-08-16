@@ -4,19 +4,14 @@ from __future__ import division
 from __future__ import print_function
 
 import numpy as np
+from skimage import io
 from oculoenv import PointToTargetContent, Environment
-
 
 def save_numpy_img(file_name, img):
     img = np.ascontiguousarray(img)
-    img = np.flip(img, 0)
-
-    from skimage import io
     io.imsave(file_name, img)
 
-
 lastImgNo = 0
-
 
 def save_img(img):
     global lastImgNo

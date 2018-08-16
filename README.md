@@ -1,5 +1,5 @@
 # oculoenv
-Oculomotor task environments.
+Oculomotor task environments. [version 0.0.5]
 
 Task contents are mostly compatible with [Psychlab](https://arxiv.org/abs/1801.08116).
 
@@ -69,9 +69,9 @@ content = PointToTargetContent(target_size="small",
 env = Environment(content)
 
 for i in range(100):
-    Dx = np.random.uniform(low=-0.02, high=0.02)
-    dy = np.random.uniform(low=-0.02, high=0.02)
-    action = np.array([dx, dy])
+    dh = np.random.uniform(low=-0.02, high=0.02)
+    dv = np.random.uniform(low=-0.02, high=0.02)
+    action = np.array([dh, dv])
     obs, reward, done, _ = env.step(action)
 
     if done:
