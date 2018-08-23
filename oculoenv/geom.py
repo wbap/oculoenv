@@ -8,9 +8,12 @@ import numpy as np
 
 
 class Matrix4(object):
-    def __init__(self):
+    def __init__(self, m=None):
         # numpy ndarray stores values in row major order
-        self.m = np.identity(4, dtype=np.float32)
+        if m is None:
+            self.m = np.identity(4, dtype=np.float32)
+        else:
+            self.m = m
 
     def set_trans(self, v):
         """ Set translation element of the matrix.
