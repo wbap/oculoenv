@@ -1,5 +1,5 @@
 # oculoenv
-Oculomotor task environments. [version 0.0.5]
+Oculomotor task environments. [version 0.0.6]
 
 Task contents are mostly compatible with [Psychlab](https://arxiv.org/abs/1801.08116).
 

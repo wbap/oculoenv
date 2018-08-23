@@ -23,6 +23,11 @@ class TestMatrix4(unittest.TestCase):
         m_test = np.identity(4, dtype=np.float32)
         self.assertTrue(np.allclose(mat0.m, m_test))
 
+    def test_init_with_arg(self):
+        mat0 = Matrix4()
+        mat1 = Matrix4(np.identity(4, dtype=np.float32))
+        self.assertTrue(np.allclose(mat0.m, mat1.m))
+
     def test_invert(self):
         mat0 = Matrix4()
 
