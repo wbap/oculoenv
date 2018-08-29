@@ -227,7 +227,7 @@ class Environment(object):
               "angle" (horizontal angle, vertical angle) Absoulte angles of the camera
             reward: (Float) Reward 
             done: (Bool) Terminate flag
-            info: Empty dictionary
+            info: (Dictionary) Response time and trial result information.
         """
         
         d_angle_h = action[0]  # left-right angle
@@ -237,11 +237,11 @@ class Environment(object):
 
         camera_forward_v = self.camera.get_forward_vec()
         local_focus_pos = self._calc_local_focus_pos(camera_forward_v)
-        reward, done = self.content.step(local_focus_pos)
+        reward, done, info = self.content.step(local_focus_pos)
 
         obs = self._get_observation()
 
-        return obs, reward, done, {}
+        return obs, reward, done, info
 
     def close(self):
         pass

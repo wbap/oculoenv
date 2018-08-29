@@ -101,6 +101,12 @@ class KeyHandler(object):
                 print('done!')
                 obs = self.env.reset()
 
+            if 'result' in info:
+                print("result={}".format(info['result']))
+
+            if 'reaction_step' in info:
+                print("reaction step={}".format(info['reaction_step']))
+
             # Udpate window display
             self.env.render()
 

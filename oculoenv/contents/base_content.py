@@ -131,12 +131,12 @@ class BaseContent(object):
         self.render()
 
     def step(self, local_focus_pos):
-        reward, done, need_render = self._step(local_focus_pos)
+        reward, done, need_render, info = self._step(local_focus_pos)
         self.step_count += 1
         if need_render:
             # Update offscreen image
             self.render()
-        return reward, done
+        return reward, done, info
 
     def render(self):
         """ Render content into offscreen frame buffer texture. """

@@ -19,7 +19,7 @@ class TestChangeDetectionContent(unittest.TestCase):
             x = np.random.uniform(low=-1.0, high=1.0)
             y = np.random.uniform(low=-1.0, high=1.0)
             local_focus_pos = [x, y]
-            reward, done = content.step(local_focus_pos)
+            reward, done, info = content.step(local_focus_pos)
             self.assertGreaterEqual(reward, 0)
             if i == (step_size - 1):
                 # At the last frame, done becomes True
@@ -38,7 +38,7 @@ class TestChangeDetectionContent(unittest.TestCase):
             x = np.random.uniform(low=-1.0, high=1.0)
             y = np.random.uniform(low=-1.0, high=1.0)
             local_focus_pos = [x, y]
-            reward, done = content.step(local_focus_pos)
+            reward, done, info = content.step(local_focus_pos)
 
 if __name__ == '__main__':
     unittest.main()

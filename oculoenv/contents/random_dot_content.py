@@ -107,6 +107,7 @@ class RandomDotMotionDiscriminationContent(BaseContent):
         self._prepare_arrow_sprites()
         
         self.phase = PHASE_START
+        self.reaction_step = 0
         self.current_direction_index = 0
 
     def _reset(self):
@@ -117,6 +118,8 @@ class RandomDotMotionDiscriminationContent(BaseContent):
 
         need_render = False
 
+        info = {}
+
         if self.phase == PHASE_START:
             if self.start_sprite.contains(local_focus_pos):
                 # When hitting the red plus cursor
@@ -125,6 +128,7 @@ class RandomDotMotionDiscriminationContent(BaseContent):
         else:
             # Response phase
             need_render = True
+            self.reaction_step += 1
 
             direction = math.pi / 4.0 * self.current_direction_index
             dx = math.cos(direction) * DOT_SPEED
@@ -135,15 +139,18 @@ class RandomDotMotionDiscriminationContent(BaseContent):
             hit = self._check_arrow_hit(local_focus_pos)
 
             if hit == ARROW_HIT_CORRECT:
-                reward = 1 # TODO: 正解時は報酬2にした方がよいか？
+                reward = 1
+                info['result'] = 'success'
             elif hit == ARROW_HIT_INCORRECT:
-                reward = 0 # TODO:  正解時は報酬1にした方がよいか？
+                reward = 0
+                info['result'] = 'fail'
             if hit == ARROW_HIT_CORRECT or hit == ARROW_HIT_INCORRECT:
+                info['reaction_step'] = self.reaction_step
                 self._move_to_start_phase()
                 need_render = True
 
         done = self.step_count >= (MAX_STEP_COUNT - 1)
-        return reward, done, need_render
+        return reward, done, need_render, info
 
     def _render(self):
         if self.phase == PHASE_START:
@@ -185,8 +192,10 @@ class RandomDotMotionDiscriminationContent(BaseContent):
             # Set dot coherent flag
             dot_sprite.is_coherent = is_coherent
 
+        self.reaction_step = 0
         # Change phase
         self.phase = PHASE_RESPONSE
+
 
     def _prepare_arrow_sprites(self):
         arrow_texture0 = self._load_texture('arrow0.png')

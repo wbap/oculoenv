@@ -47,7 +47,7 @@ class Quadrant(object):
 class PointToTargetContent(BaseContent):
     difficulty_range = 3
     
-    def __init__(self, difficulty=None):        
+    def __init__(self, difficulty=None):
         self.difficulty = difficulty
         assert (difficulty is None) or (difficulty < self.difficulty_range)
         
@@ -106,6 +106,7 @@ class PointToTargetContent(BaseContent):
             self._apply_difficulty(self.difficulty)
             
         self.phase = PHASE_START
+        self.reaction_step = 0
 
     def _reset(self):
         self._move_to_start_phase()
@@ -115,24 +116,31 @@ class PointToTargetContent(BaseContent):
 
         need_render = False
 
+        info = {}
+
         if self.phase == PHASE_START:
             if self.start_sprite.contains(local_focus_pos):
                 # When hitting the red plus cursor
                 self._move_to_target_phase()
                 need_render = True
         else:
+            self.reaction_step += 1
             if self.target_sprite.contains(local_focus_pos):
                 # When hitting the target
                 reward = 2
+                info['result'] = 'success'
+                info['reaction_step'] = self.reaction_step
             elif self.lure_sprite.contains(local_focus_pos):
                 # When hitting the lure
                 reward = 1
+                info['result'] = 'fail'
+                info['reaction_step'] = self.reaction_step
             if reward > 0:
                 self._move_to_start_phase()
                 need_render = True
 
         done = self.step_count >= (MAX_STEP_COUNT - 1)
-        return reward, done, need_render
+        return reward, done, need_render, info
 
     def _render(self):
         if self.phase == PHASE_START:
@@ -189,3 +197,4 @@ class PointToTargetContent(BaseContent):
         """ Change phase to target showing. """
         self._locate_targets()
         self.phase = PHASE_TARGET
+        self.reaction_step = 0
