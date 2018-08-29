@@ -137,6 +137,8 @@ class OddOneOutSignSprite(object):
 
 
 class OddOneOutContent(BaseContent):
+    difficulty_range = 0
+    
     def __init__(self):
         super(OddOneOutContent, self).__init__(bg_color=[0.0, 0.0, 0.0, 1.0])
 

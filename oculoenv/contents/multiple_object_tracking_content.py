@@ -32,7 +32,7 @@ BALL_COLOR = [0.0, 0.0, 0.0]
 MAX_STEP_COUNT = 180 * 60
 
 MEMORY_STEP_COUNT = 60
-MOVE_STEP_COUNT = 90
+MOVE_STEP_COUNT = 60
 
 if DEBUGGING:
     MEMORY_STEP_COUNT = 3
@@ -157,8 +157,13 @@ class MultipleObjectTrackingSprite(object):
         
 
 class MultipleObjectTrackingContent(BaseContent):
-    def __init__(self):
+    difficulty_range = 6
+    
+    def __init__(self, difficulty=None):
         super(MultipleObjectTrackingContent, self).__init__()
+        
+        self.difficulty = difficulty
+        assert (difficulty is None) or (difficulty < self.difficulty_range)
 
     def _init(self):
         start_marker_texture = self._load_texture('start_marker0.png')
@@ -179,8 +184,10 @@ class MultipleObjectTrackingContent(BaseContent):
         self.phase_count = 0
 
     def _prepare_ball_sprites(self):
-        # TODO: 徐々に増やすようにするか？
-        ball_size = np.random.randint(low=2, high=8)
+        if self.difficulty == None:
+            ball_size = np.random.randint(low=2, high=2+self.difficulty_range)
+        else:
+            ball_size = 2 + self.difficulty
 
         dice = np.random.randint(2)
         is_target_correct = (dice == 1)

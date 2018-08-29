@@ -75,11 +75,14 @@ class EightSquareGrid(object):
 
 
 class ChangeDetectionContent(BaseContent):
-    def __init__(self, target_number, max_learning_count, max_interval_count):
+    difficulty_range = 5
+    
+    def __init__(self, difficulty=None):
         self.quadrants = EightSquareGrid()
-        self.target_number = target_number
-        self.max_learning_count = max_learning_count
-        self.max_interval_count = max_interval_count
+        
+        self.difficulty = difficulty
+        self.max_learning_count = 20
+        self.max_interval_count = 10
 
         super(ChangeDetectionContent, self).__init__()
 
@@ -136,7 +139,13 @@ class ChangeDetectionContent(BaseContent):
         self.current_phase.render(self.common_quad_vlist)
 
     def _prepare_target_sprites(self):
-        centers = self.quadrants.get_random_location(self.target_number)
+        if self.difficulty == None:
+            # Choose target between 2 and 6.
+            target_number = np.random.randint(low=2, high=2+self.difficulty_range)
+        else:
+            target_number = 2 + self.difficulty
+        
+        centers = self.quadrants.get_random_location(target_number)
 
         self.target_sprites = []
         for center in centers:

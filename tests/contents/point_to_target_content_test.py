@@ -29,8 +29,7 @@ class TestQuadrant(unittest.TestCase):
 class TestPointToTargetContent(unittest.TestCase):
     def test_plus_target_confolict(self):
         # Check conflict with random location and plus target region
-        content = PointToTargetContent(
-            target_size="small", use_lure=False, lure_size="small")
+        content = PointToTargetContent()
 
         for i in range(100):
             for j in range(4):
@@ -43,8 +42,7 @@ class TestPointToTargetContent(unittest.TestCase):
                 self.assertFalse(inside_plus_marker)
 
     def test_step(self):
-        content = PointToTargetContent(
-            target_size="small", use_lure=False, lure_size="small")
+        content = PointToTargetContent()
 
         step_size = 180 * 60
 
@@ -61,6 +59,13 @@ class TestPointToTargetContent(unittest.TestCase):
                 # Otherwise done is False
                 self.assertFalse(done)
 
-
+    def test_explicity_difficulty_setting(self):
+        # Set task difficulty explicitly and confirm target and lure size is fixed.
+        self.assertEqual(PointToTargetContent.difficulty_range, 3)
+        
+        content = PointToTargetContent(difficulty=0)
+        self.assertEqual(content.target_sprite.width, 0.2)
+        self.assertEqual(content.lure_sprite.width, 0.1)
+        
 if __name__ == '__main__':
     unittest.main()

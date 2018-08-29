@@ -63,9 +63,7 @@ $ pip install oculoenv
 import numpy as np
 from oculoenv import PointToTargetContent, Environment
 
-content = PointToTargetContent(target_size="small",
-                               use_lure=True,
-                               lure_size="large")
+content = PointToTargetContent()
 env = Environment(content)
 
 for i in range(100):

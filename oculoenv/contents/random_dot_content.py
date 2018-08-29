@@ -24,7 +24,7 @@ DOT_SPEED = 0.03
 # Gaussian standatd deviation for color attenuation calculation
 ATTENUATE_GAUSSIAN_SIGMA_SQ = (0.2 * 0.2)
 
-COHERENT_RATES = [0.9, 0.7, 0.5, 0.3]
+COHERENT_RATES = [0.7, 0.5, 0.3, 0.1, 0.05]
 
 ARROW_DISTANCE = 0.8
 ARROW_HALF_WIDTH = 0.08
@@ -83,8 +83,13 @@ class DotSprite(object):
     
 
 class RandomDotMotionDiscriminationContent(BaseContent):
-    def __init__(self):
+    difficulty_range = len(COHERENT_RATES)
+    
+    def __init__(self, difficulty=None):
         super(RandomDotMotionDiscriminationContent, self).__init__(bg_color=[0.0, 0.0, 0.0, 1.0])
+        
+        self.difficulty = difficulty
+        assert (difficulty is None) or (difficulty < self.difficulty_range)
 
     def _init(self):
         start_marker_texture = self._load_texture('start_marker0.png')
@@ -168,7 +173,10 @@ class RandomDotMotionDiscriminationContent(BaseContent):
         self.current_direction_index = np.random.randint(0, 8)
         
         # Choose coherent rate
-        coherent_rate_index = np.random.randint(0, len(COHERENT_RATES))
+        if self.difficulty == None:        
+            coherent_rate_index = np.random.randint(0, len(COHERENT_RATES))
+        else:
+            coherent_rate_index = self.difficulty
         coherent_rate = COHERENT_RATES[coherent_rate_index]
         coherent_dot_num = int(DOT_NUM * coherent_rate)
 

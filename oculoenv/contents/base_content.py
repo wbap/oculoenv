@@ -59,6 +59,9 @@ class ContentSprite(object):
         self.pos_x = pos[0]
         self.pos_y = pos[1]
 
+    def set_width(self, width):
+        self.width = width
+
     def contains(self, pos):
         """ Retuens whether specified position is inside the sprite rect.
     
