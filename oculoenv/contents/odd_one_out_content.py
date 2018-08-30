@@ -35,7 +35,7 @@ COLORS = [
 
 GRID_DIVISIONS = [3, 5, 7]
 
-MOTION_INTERVAL_FRAMES = 4
+MOTION_INTERVAL_FRAMES = 2
 
 
 class OddOneOutSignSprite(object):
