@@ -35,7 +35,7 @@ COLORS = [
 
 GRID_DIVISIONS = [3, 5, 7]
 
-MOTION_INTERVAL_FRAMES = 4
+MOTION_INTERVAL_FRAMES = 2
 
 
 class OddOneOutSignSprite(object):
@@ -137,6 +137,8 @@ class OddOneOutSignSprite(object):
 
 
 class OddOneOutContent(BaseContent):
+    difficulty_range = 0
+    
     def __init__(self):
         super(OddOneOutContent, self).__init__(bg_color=[0.0, 0.0, 0.0, 1.0])
 
@@ -157,6 +159,7 @@ class OddOneOutContent(BaseContent):
         self._prepare_sign_sprites()
 
         self.phase = PHASE_START
+        self.reaction_step = 0
 
     def _prepare_sign_sprites(self):
         odd_type = np.random.randint(0, ODD_TYPE_MAX)
@@ -249,12 +252,15 @@ class OddOneOutContent(BaseContent):
 
         need_render = False
 
+        info = {}
+
         if self.phase == PHASE_START:
             if self.start_sprite.contains(local_focus_pos):
                 # When hitting the red plus cursor
                 self._move_to_find_phase()
                 need_render = True
         else:
+            self.reaction_step += 1
             need_render = False
 
             for sign_sprite in self.sign_sprites:
@@ -266,11 +272,15 @@ class OddOneOutContent(BaseContent):
             if found_odd:
                 reward = 1
             if reward > 0:
+                info = {}
+                # This rask's result is always 'success'
+                info['result'] = 'success'
+                info['reaction_step'] = self.reaction_step
                 self._move_to_start_phase()
                 need_render = True
 
         done = self.step_count >= (MAX_STEP_COUNT - 1)
-        return reward, done, need_render
+        return reward, done, need_render, info
 
     def _render(self):
         if self.phase == PHASE_START:
@@ -286,4 +296,5 @@ class OddOneOutContent(BaseContent):
     def _move_to_find_phase(self):
         """ Change phase to target finding. """
         self._prepare_sign_sprites()
+        self.reaction_step = 0
         self.phase = PHASE_FIND

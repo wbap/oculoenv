@@ -20,9 +20,7 @@ def save_img(img):
 
 
 def check_offscreen():
-    content = PointToTargetContent(target_size="small",
-                                   use_lure=True,
-                                   lure_size="large")
+    content = PointToTargetContent()
     env = Environment(content)
 
     frame_size = 10

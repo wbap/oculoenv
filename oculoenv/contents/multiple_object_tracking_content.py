@@ -31,8 +31,8 @@ BALL_COLOR = [0.0, 0.0, 0.0]
 
 MAX_STEP_COUNT = 180 * 60
 
-MEMORY_STEP_COUNT = 60
-MOVE_STEP_COUNT = 90
+MEMORY_STEP_COUNT = 30
+MOVE_STEP_COUNT = 60
 
 if DEBUGGING:
     MEMORY_STEP_COUNT = 3
@@ -157,8 +157,13 @@ class MultipleObjectTrackingSprite(object):
         
 
 class MultipleObjectTrackingContent(BaseContent):
-    def __init__(self):
+    difficulty_range = 6
+    
+    def __init__(self, difficulty=None):
         super(MultipleObjectTrackingContent, self).__init__()
+        
+        self.difficulty = difficulty
+        assert (difficulty is None) or (difficulty < self.difficulty_range)
 
     def _init(self):
         start_marker_texture = self._load_texture('start_marker0.png')
@@ -179,8 +184,10 @@ class MultipleObjectTrackingContent(BaseContent):
         self.phase_count = 0
 
     def _prepare_ball_sprites(self):
-        # TODO: 徐々に増やすようにするか？
-        ball_size = np.random.randint(low=2, high=8)
+        if self.difficulty == None:
+            ball_size = np.random.randint(low=2, high=2+self.difficulty_range)
+        else:
+            ball_size = 2 + self.difficulty
 
         dice = np.random.randint(2)
         is_target_correct = (dice == 1)
@@ -232,6 +239,8 @@ class MultipleObjectTrackingContent(BaseContent):
 
         need_render = False
 
+        info = {}
+
         if self.phase == PHASE_START:
             if self.start_sprite.contains(local_focus_pos):
                 # When hitting the red plus cursor
@@ -253,6 +262,7 @@ class MultipleObjectTrackingContent(BaseContent):
         else:
             # Response phase
             hit_type = HIT_NONE
+            self.phase_count += 1
 
             if self.button_sprite_no.contains(local_focus_pos):
                 hit_type = HIT_NO
@@ -260,6 +270,7 @@ class MultipleObjectTrackingContent(BaseContent):
                 hit_type = HIT_YES
 
             if hit_type != HIT_NONE:
+                
                 if hit_type == HIT_NO:
                     if not self._is_target_correct():
                         # If there is no target and hit NO button
@@ -268,11 +279,16 @@ class MultipleObjectTrackingContent(BaseContent):
                     if self._is_target_correct():
                         # If there is target and hit YES button
                         reward = 1
+                info['reaction_step'] = self.phase_count
+                if reward == 1:
+                    info['result'] = 'success'
+                else:
+                    info['result'] = 'fail'
                 self._move_to_start_phase()
                 need_render = True
 
         done = self.step_count >= (MAX_STEP_COUNT - 1)
-        return reward, done, need_render
+        return reward, done, need_render, info
 
     def _render(self):
         if self.phase == PHASE_START:
@@ -304,3 +320,4 @@ class MultipleObjectTrackingContent(BaseContent):
         """ Change phase to response """
         self.phase = PHASE_RESPONSE
         self.phase_count = 0
+        

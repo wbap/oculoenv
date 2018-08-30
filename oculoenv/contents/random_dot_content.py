@@ -24,7 +24,7 @@ DOT_SPEED = 0.03
 # Gaussian standatd deviation for color attenuation calculation
 ATTENUATE_GAUSSIAN_SIGMA_SQ = (0.2 * 0.2)
 
-COHERENT_RATES = [0.9, 0.7, 0.5, 0.3]
+COHERENT_RATES = [0.7, 0.5, 0.3, 0.1, 0.05]
 
 ARROW_DISTANCE = 0.8
 ARROW_HALF_WIDTH = 0.08
@@ -83,8 +83,13 @@ class DotSprite(object):
     
 
 class RandomDotMotionDiscriminationContent(BaseContent):
-    def __init__(self):
+    difficulty_range = len(COHERENT_RATES)
+    
+    def __init__(self, difficulty=None):
         super(RandomDotMotionDiscriminationContent, self).__init__(bg_color=[0.0, 0.0, 0.0, 1.0])
+        
+        self.difficulty = difficulty
+        assert (difficulty is None) or (difficulty < self.difficulty_range)
 
     def _init(self):
         start_marker_texture = self._load_texture('start_marker0.png')
@@ -102,6 +107,7 @@ class RandomDotMotionDiscriminationContent(BaseContent):
         self._prepare_arrow_sprites()
         
         self.phase = PHASE_START
+        self.reaction_step = 0
         self.current_direction_index = 0
 
     def _reset(self):
@@ -112,6 +118,8 @@ class RandomDotMotionDiscriminationContent(BaseContent):
 
         need_render = False
 
+        info = {}
+
         if self.phase == PHASE_START:
             if self.start_sprite.contains(local_focus_pos):
                 # When hitting the red plus cursor
@@ -120,6 +128,7 @@ class RandomDotMotionDiscriminationContent(BaseContent):
         else:
             # Response phase
             need_render = True
+            self.reaction_step += 1
 
             direction = math.pi / 4.0 * self.current_direction_index
             dx = math.cos(direction) * DOT_SPEED
@@ -130,15 +139,18 @@ class RandomDotMotionDiscriminationContent(BaseContent):
             hit = self._check_arrow_hit(local_focus_pos)
 
             if hit == ARROW_HIT_CORRECT:
-                reward = 1 # TODO: 正解時は報酬2にした方がよいか？
+                reward = 1
+                info['result'] = 'success'
             elif hit == ARROW_HIT_INCORRECT:
-                reward = 0 # TODO:  正解時は報酬1にした方がよいか？
+                reward = 0
+                info['result'] = 'fail'
             if hit == ARROW_HIT_CORRECT or hit == ARROW_HIT_INCORRECT:
+                info['reaction_step'] = self.reaction_step
                 self._move_to_start_phase()
                 need_render = True
 
         done = self.step_count >= (MAX_STEP_COUNT - 1)
-        return reward, done, need_render
+        return reward, done, need_render, info
 
     def _render(self):
         if self.phase == PHASE_START:
@@ -168,7 +180,10 @@ class RandomDotMotionDiscriminationContent(BaseContent):
         self.current_direction_index = np.random.randint(0, 8)
         
         # Choose coherent rate
-        coherent_rate_index = np.random.randint(0, len(COHERENT_RATES))
+        if self.difficulty == None:        
+            coherent_rate_index = np.random.randint(0, len(COHERENT_RATES))
+        else:
+            coherent_rate_index = self.difficulty
         coherent_rate = COHERENT_RATES[coherent_rate_index]
         coherent_dot_num = int(DOT_NUM * coherent_rate)
 
@@ -177,8 +192,10 @@ class RandomDotMotionDiscriminationContent(BaseContent):
             # Set dot coherent flag
             dot_sprite.is_coherent = is_coherent
 
+        self.reaction_step = 0
         # Change phase
         self.phase = PHASE_RESPONSE
+
 
     def _prepare_arrow_sprites(self):
         arrow_texture0 = self._load_texture('arrow0.png')

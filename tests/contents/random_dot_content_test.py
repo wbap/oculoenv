@@ -69,7 +69,7 @@ class TestRandomDotMotionDiscriminationContent(unittest.TestCase):
             x = np.random.uniform(low=-1.0, high=1.0)
             y = np.random.uniform(low=-1.0, high=1.0)
             local_focus_pos = [x, y]
-            reward, done = content.step(local_focus_pos)
+            reward, done, info = content.step(local_focus_pos)
             self.assertGreaterEqual(reward, 0)
             if i == (step_size - 1):
                 # At the last frame, done becomes True
@@ -77,6 +77,18 @@ class TestRandomDotMotionDiscriminationContent(unittest.TestCase):
             else:
                 # Otherwise done is False
                 self.assertFalse(done)
+
+    def test_explicity_difficulty_setting(self):
+        # Set task difficulty explicitly
+        self.assertEqual(RandomDotMotionDiscriminationContent.difficulty_range, 5)
+        content = RandomDotMotionDiscriminationContent(difficulty=0)
+
+        step_size = 10
+        for i in range(step_size):
+            x = np.random.uniform(low=-1.0, high=1.0)
+            y = np.random.uniform(low=-1.0, high=1.0)
+            local_focus_pos = [x, y]
+            reward, done, info = content.step(local_focus_pos)
 
 if __name__ == '__main__':
     unittest.main()

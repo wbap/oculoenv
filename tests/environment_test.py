@@ -17,7 +17,7 @@ class TestEnvironment(unittest.TestCase):
         env = Environment(content)
         
         action = np.array([0.0, 0.0])
-        obs, reward, done, _ = env.step(action)
+        obs, reward, done, info = env.step(action)
 
         image = obs['screen']
         angle = obs['angle']
@@ -28,6 +28,8 @@ class TestEnvironment(unittest.TestCase):
 
         self.assertTrue(type(reward) is int)
         self.assertTrue(type(done) is bool)
+        
+        self.assertTrue(type(info) is dict)
 
     def test_reset(self):
         content = PointToTargetContent()

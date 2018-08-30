@@ -45,11 +45,12 @@ class Quadrant(object):
 
 
 class PointToTargetContent(BaseContent):
-    def __init__(self, target_size="small", use_lure=False, lure_size="small"):
-        self.target_size = target_size
-        self.use_lure = use_lure
-        self.lure_size = lure_size
-
+    difficulty_range = 3
+    
+    def __init__(self, difficulty=None):
+        self.difficulty = difficulty
+        assert (difficulty is None) or (difficulty < self.difficulty_range)
+        
         self.quadrants = []
         # To avoid confilict with plus marker, adding margin
         margin = START_MARKER_WIDTH
@@ -92,25 +93,20 @@ class PointToTargetContent(BaseContent):
         self.start_sprite = ContentSprite(start_marker_texture, 0.0, 0.0,
                                           START_MARKER_WIDTH)
 
-        if self.target_size == "small":
-            target_with = TARGET_WIDTH_SMALL
-        else:
-            target_with = TARGET_WIDTH_LARGE
-        if self.lure_size == "small":
-            lure_width = TARGET_WIDTH_SMALL
-        else:
-            lure_width = TARGET_WIDTH_LARGE
-
         self.target_sprite = ContentSprite(
-            e_marker_texture, 0.0, 0.0, target_with, color=[0.0, 0.0, 0.0])
+            e_marker_texture,
+            0.0, 0.0, TARGET_WIDTH_SMALL, color=[0.0, 0.0, 0.0])
         self.lure_sprite = ContentSprite(
             e_marker_texture,
-            0.0,
-            0.0,
-            lure_width,
-            rot_index=1,
-            color=[0.0, 0.0, 0.0])
+            0.0, 0.0, TARGET_WIDTH_SMALL, rot_index=1, color=[0.0, 0.0, 0.0])
+
+        if self.difficulty is not None:
+            # If task difficulty is explicitly applied, keep specific target and lure sizes
+            # during entire episode. (Otherwise change size 
+            self._apply_difficulty(self.difficulty)
+            
         self.phase = PHASE_START
+        self.reaction_step = 0
 
     def _reset(self):
         self._move_to_start_phase()
@@ -120,39 +116,70 @@ class PointToTargetContent(BaseContent):
 
         need_render = False
 
+        info = {}
+
         if self.phase == PHASE_START:
             if self.start_sprite.contains(local_focus_pos):
                 # When hitting the red plus cursor
                 self._move_to_target_phase()
                 need_render = True
         else:
+            self.reaction_step += 1
             if self.target_sprite.contains(local_focus_pos):
                 # When hitting the target
                 reward = 2
-            elif (self.use_lure
-                  and self.lure_sprite.contains(local_focus_pos)):
+                info['result'] = 'success'
+                info['reaction_step'] = self.reaction_step
+            elif self.lure_sprite.contains(local_focus_pos):
                 # When hitting the lure
                 reward = 1
+                info['result'] = 'fail'
+                info['reaction_step'] = self.reaction_step
             if reward > 0:
                 self._move_to_start_phase()
                 need_render = True
 
         done = self.step_count >= (MAX_STEP_COUNT - 1)
-        return reward, done, need_render
+        return reward, done, need_render, info
 
     def _render(self):
         if self.phase == PHASE_START:
             self.start_sprite.render(self.common_quad_vlist)
         else:
-            if self.use_lure:
-                self.lure_sprite.render(self.common_quad_vlist)
+            self.lure_sprite.render(self.common_quad_vlist)
             self.target_sprite.render(self.common_quad_vlist)
 
     def _move_to_start_phase(self):
         """ Change phase to red plus cursor showing. """
         self.phase = PHASE_START
 
+    def _apply_difficulty(self, current_difficulty):
+        """ Change target and lure size based on the difficulty. """
+            
+        if current_difficulty == 0:
+            # Target is large, lure is small
+            self.target_sprite.set_width(TARGET_WIDTH_LARGE)
+            self.lure_sprite.set_width(TARGET_WIDTH_SMALL)
+        elif current_difficulty == 1:
+            # Target is large, lure is large or
+            # Target is small, lure is small
+            if np.random.randint(0, 2) == 0:
+                self.target_sprite.set_width(TARGET_WIDTH_LARGE)
+                self.lure_sprite.set_width(TARGET_WIDTH_LARGE)
+            else:
+                self.target_sprite.set_width(TARGET_WIDTH_SMALL)
+                self.lure_sprite.set_width(TARGET_WIDTH_SMALL)
+        else:
+            # Target is small, lure is large
+            self.target_sprite.set_width(TARGET_WIDTH_SMALL)
+            self.lure_sprite.set_width(TARGET_WIDTH_LARGE)
+
     def _locate_targets(self):
+        if self.difficulty is None:
+            # Change target and lure size randomly.
+            current_difficulty = np.random.randint(0, self.difficulty_range)
+            self._apply_difficulty(current_difficulty)
+        
         indices = list(range(4))
         random.shuffle(indices)
 
@@ -161,13 +188,13 @@ class PointToTargetContent(BaseContent):
             self.target_sprite.width)
         self.target_sprite.set_pos(target_pos)
 
-        if self.use_lure:
-            lure_quadrant_index = indices[1]
-            lure_pos = self.quadrants[lure_quadrant_index].get_random_location(
-                self.lure_sprite.width)
-            self.lure_sprite.set_pos(lure_pos)
+        lure_quadrant_index = indices[1]
+        lure_pos = self.quadrants[lure_quadrant_index].get_random_location(
+            self.lure_sprite.width)
+        self.lure_sprite.set_pos(lure_pos)
 
     def _move_to_target_phase(self):
         """ Change phase to target showing. """
         self._locate_targets()
         self.phase = PHASE_TARGET
+        self.reaction_step = 0

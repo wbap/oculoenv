@@ -1,5 +1,5 @@
 # oculoenv
-Oculomotor task environments. [version 0.0.6]
+Oculomotor task environments. [version 0.1.0]
 
 Task contents are mostly compatible with [Psychlab](https://arxiv.org/abs/1801.08116).
 
@@ -63,9 +63,7 @@ $ pip install oculoenv
 import numpy as np
 from oculoenv import PointToTargetContent, Environment
 
-content = PointToTargetContent(target_size="small",
-                               use_lure=True,
-                               lure_size="large")
+content = PointToTargetContent()
 env = Environment(content)
 
 for i in range(100):

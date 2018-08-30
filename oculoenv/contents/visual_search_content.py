@@ -69,8 +69,13 @@ class VisualSearchSignSprite(object):
 
 
 class VisualSearchContent(BaseContent):
-    def __init__(self):
+    difficulty_range = 6
+    
+    def __init__(self, difficulty=None):
         super(VisualSearchContent, self).__init__()
+        
+        self.difficulty = difficulty
+        assert (difficulty is None) or (difficulty < self.difficulty_range)
 
     def _init(self):
         start_marker_texture = self._load_texture('start_marker0.png')
@@ -93,6 +98,7 @@ class VisualSearchContent(BaseContent):
             white_texture, 0.2, -0.9, BUTTON_WIDTH, color=[0.0, 0.0,
                                                            0.0])  # Right
 
+        self.reaction_step = 0
         self.phase = PHASE_START
 
     def _get_sign_variables(self, pos_index, distraction_type, has_target):
@@ -116,8 +122,11 @@ class VisualSearchContent(BaseContent):
         return tex_index, color_index
 
     def _prepare_sign_sprites(self):
-        # TODO: 徐々に増やすようにするか？
-        sign_size = np.random.randint(low=2, high=8)
+        # Choose sign size between 2 and 7.
+        if self.difficulty == None:
+            sign_size = np.random.randint(low=2, high=2+self.difficulty_range)
+        else:
+            sign_size = 2 + self.difficulty
         pos_indices = list(range(GRID_DIVISION * GRID_DIVISION))
         random.shuffle(pos_indices)
         pos_indices = pos_indices[:sign_size]
@@ -147,12 +156,15 @@ class VisualSearchContent(BaseContent):
 
         need_render = False
 
+        info = {}
+
         if self.phase == PHASE_START:
             if self.start_sprite.contains(local_focus_pos):
                 # When hitting the red plus cursor
                 self._move_to_find_phase()
                 need_render = True
         else:
+            self.reaction_step += 1
             hit_type = HIT_NONE
 
             if self.button_sprite_no.contains(local_focus_pos):
@@ -169,11 +181,16 @@ class VisualSearchContent(BaseContent):
                     if self._is_target_present():
                         # If there is target and hit YES button
                         reward = 1
+                if reward == 1:
+                    info['result'] = 'success'
+                else:
+                    info['result'] = 'fail'
+                info['reaction_step'] = self.reaction_step
                 self._move_to_start_phase()
                 need_render = True
 
         done = self.step_count >= (MAX_STEP_COUNT - 1)
-        return reward, done, need_render
+        return reward, done, need_render, info
 
     def _render(self):
         if self.phase == PHASE_START:
@@ -192,4 +209,5 @@ class VisualSearchContent(BaseContent):
     def _move_to_find_phase(self):
         """ Change phase to target finding. """
         self._prepare_sign_sprites()
+        self.reaction_step = 0
         self.phase = PHASE_FIND

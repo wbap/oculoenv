@@ -75,11 +75,14 @@ class EightSquareGrid(object):
 
 
 class ChangeDetectionContent(BaseContent):
-    def __init__(self, target_number, max_learning_count, max_interval_count):
+    difficulty_range = 5
+    
+    def __init__(self, difficulty=None):
         self.quadrants = EightSquareGrid()
-        self.target_number = target_number
-        self.max_learning_count = max_learning_count
-        self.max_interval_count = max_interval_count
+        
+        self.difficulty = difficulty
+        self.max_learning_count = 20
+        self.max_interval_count = 10
 
         super(ChangeDetectionContent, self).__init__()
 
@@ -113,10 +116,13 @@ class ChangeDetectionContent(BaseContent):
         done = self.step_count >= (MAX_STEP_COUNT - 1)
 
         # Caution: for evaluation phase, need_render -> reward -> reset order is sensitive.
-        need_render = self.current_phase.need_render(local_focus_pos)
+        phase_done = self.current_phase.phase_done(local_focus_pos)
+        need_render = phase_done
         reward = self.current_phase.reward()
 
-        if need_render:
+        if phase_done:
+            info = self.current_phase.info()
+            
             if self.current_phase == self.start_phase:
                 self.current_phase = self.learning_phase
             elif self.current_phase == self.learning_phase:
@@ -129,14 +135,21 @@ class ChangeDetectionContent(BaseContent):
                 self._create_learning_and_evaluation_phase()
 
             self.current_phase.reset()
-
-        return reward, done, need_render
+        else:
+            info = {}
+        return reward, done, need_render, info
 
     def _render(self):
         self.current_phase.render(self.common_quad_vlist)
 
     def _prepare_target_sprites(self):
-        centers = self.quadrants.get_random_location(self.target_number)
+        if self.difficulty == None:
+            # Choose target between 2 and 6.
+            target_number = np.random.randint(low=2, high=2+self.difficulty_range)
+        else:
+            target_number = 2 + self.difficulty
+        
+        centers = self.quadrants.get_random_location(target_number)
 
         self.target_sprites = []
         for center in centers:
@@ -165,7 +178,7 @@ class AbstractPhase(object):
     def reset(self):
         raise NotImplementedError()
 
-    def need_render(self, local_focus_pos):
+    def phase_done(self, local_focus_pos):
         raise NotImplementedError()
 
     def reward(self):
@@ -173,6 +186,9 @@ class AbstractPhase(object):
 
     def render(self, common_quad_vlist):
         raise NotImplementedError()
+
+    def info(self):
+        return {}
 
 
 class StartPhase(AbstractPhase):
@@ -185,7 +201,7 @@ class StartPhase(AbstractPhase):
     def reset(self):
         pass
 
-    def need_render(self, local_focus_pos):
+    def phase_done(self, local_focus_pos):
         return self.plus_sprite.contains(local_focus_pos)
 
     def reward(self):
@@ -207,7 +223,7 @@ class LearningPhase(AbstractPhase):
     def reset(self):
         self.learning_count = 0
 
-    def need_render(self, local_focus_pos):
+    def phase_done(self, local_focus_pos):
         return self.learning_count >= self.max_learning_count
 
     def reward(self):
@@ -229,7 +245,7 @@ class IntervalPhase(AbstractPhase):
     def reset(self):
         self.interval_count = 0
 
-    def need_render(self, local_focus_pos):
+    def phase_done(self, local_focus_pos):
         return self.interval_count >= self.max_interval_count
 
     def reward(self):
@@ -248,8 +264,10 @@ class EvaluationPhase(AbstractPhase):
         self.is_changed = False
         self.hit_type = AnswerBoxHit.NONE
 
+        self.reaction_step = 0
+
     def step(self):
-        pass
+        self.reaction_step += 1
 
     def reset(self):
         if np.random.rand() < TARGET_CHANGE_THRESHOLD:
@@ -272,10 +290,11 @@ class EvaluationPhase(AbstractPhase):
             self._change_texture(sprite)
         elif rand_num == 2:
             self._change_rotation(sprite)
+        self.reaction_step = 0
 
-    def need_render(self, local_focus_pos):
+    def phase_done(self, local_focus_pos):
         self.hit_type = self.answer_state.detect_hit(local_focus_pos)
-        return self.hit_type == AnswerBoxHit.YES or self.hit_type == AnswerBoxHit.NO
+        return self.hit_type == AnswerBoxHit.YES or self.hit_type == AnswerBoxHit.NO    
 
     def reward(self):
         reward = 0
@@ -283,9 +302,17 @@ class EvaluationPhase(AbstractPhase):
             reward = 1
         elif self.hit_type == AnswerBoxHit.NO and not self.is_changed:
             reward = 1
-
         return reward
 
+    def info(self):
+        info = {}
+        info['reaction_step'] = self.reaction_step
+        if self.reward() == 1:
+            info['result'] = 'success'
+        else:
+            info['result'] = 'fail'
+        return info
+    
     def render(self, common_quad_vlist):
         for sprite in self.target_sprites:  # Phase.LEARNING or Phase.EVALUATION
             sprite.render(common_quad_vlist)
