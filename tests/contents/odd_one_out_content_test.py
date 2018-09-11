@@ -26,8 +26,8 @@ class TestOddOneOutSignSprite(unittest.TestCase):
             odd=True)
         for i in range(8):
             need_rapaint = sign_sprite.step()
-            if i % 4 == 3:
-                # Repaint becomes True with every 4 frames
+            if i % 2 == 1:
+                # Repaint becomes True with every 2 frames
                 self.assertTrue(need_rapaint)
             else:
                 self.assertFalse(need_rapaint)
@@ -114,6 +114,10 @@ class TestOddOneOutContent(unittest.TestCase):
             else:
                 # Otherwise done is False
                 self.assertFalse(done)
+
+    def test_explicity_difficulty_setting(self):
+        self.assertEqual(OddOneOutContent.difficulty_range, 0)
+        content = OddOneOutContent(difficulty=-1)
 
 
 if __name__ == '__main__':

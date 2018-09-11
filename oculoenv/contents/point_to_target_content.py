@@ -47,9 +47,9 @@ class Quadrant(object):
 class PointToTargetContent(BaseContent):
     difficulty_range = 3
     
-    def __init__(self, difficulty=None):
+    def __init__(self, difficulty=-1):
         self.difficulty = difficulty
-        assert (difficulty is None) or (difficulty < self.difficulty_range)
+        assert (difficulty >= -1) and (difficulty < self.difficulty_range)
         
         self.quadrants = []
         # To avoid confilict with plus marker, adding margin
@@ -100,7 +100,7 @@ class PointToTargetContent(BaseContent):
             e_marker_texture,
             0.0, 0.0, TARGET_WIDTH_SMALL, rot_index=1, color=[0.0, 0.0, 0.0])
 
-        if self.difficulty is not None:
+        if self.difficulty != -1:
             # If task difficulty is explicitly applied, keep specific target and lure sizes
             # during entire episode. (Otherwise change size 
             self._apply_difficulty(self.difficulty)
@@ -175,7 +175,7 @@ class PointToTargetContent(BaseContent):
             self.lure_sprite.set_width(TARGET_WIDTH_LARGE)
 
     def _locate_targets(self):
-        if self.difficulty is None:
+        if self.difficulty == -1:
             # Change target and lure size randomly.
             current_difficulty = np.random.randint(0, self.difficulty_range)
             self._apply_difficulty(current_difficulty)

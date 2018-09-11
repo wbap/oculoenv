@@ -159,11 +159,11 @@ class MultipleObjectTrackingSprite(object):
 class MultipleObjectTrackingContent(BaseContent):
     difficulty_range = 6
     
-    def __init__(self, difficulty=None):
+    def __init__(self, difficulty=-1):
         super(MultipleObjectTrackingContent, self).__init__()
         
         self.difficulty = difficulty
-        assert (difficulty is None) or (difficulty < self.difficulty_range)
+        assert (difficulty >= -1) and (difficulty < self.difficulty_range)
 
     def _init(self):
         start_marker_texture = self._load_texture('start_marker0.png')
@@ -184,7 +184,7 @@ class MultipleObjectTrackingContent(BaseContent):
         self.phase_count = 0
 
     def _prepare_ball_sprites(self):
-        if self.difficulty == None:
+        if self.difficulty == -1:
             ball_size = np.random.randint(low=2, high=2+self.difficulty_range)
         else:
             ball_size = 2 + self.difficulty

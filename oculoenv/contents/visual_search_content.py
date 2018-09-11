@@ -71,11 +71,11 @@ class VisualSearchSignSprite(object):
 class VisualSearchContent(BaseContent):
     difficulty_range = 6
     
-    def __init__(self, difficulty=None):
+    def __init__(self, difficulty=-1):
         super(VisualSearchContent, self).__init__()
         
         self.difficulty = difficulty
-        assert (difficulty is None) or (difficulty < self.difficulty_range)
+        assert (difficulty >= -1) and (difficulty < self.difficulty_range)
 
     def _init(self):
         start_marker_texture = self._load_texture('start_marker0.png')
@@ -123,7 +123,7 @@ class VisualSearchContent(BaseContent):
 
     def _prepare_sign_sprites(self):
         # Choose sign size between 2 and 7.
-        if self.difficulty == None:
+        if self.difficulty == -1:
             sign_size = np.random.randint(low=2, high=2+self.difficulty_range)
         else:
             sign_size = 2 + self.difficulty

@@ -85,11 +85,11 @@ class DotSprite(object):
 class RandomDotMotionDiscriminationContent(BaseContent):
     difficulty_range = len(COHERENT_RATES)
     
-    def __init__(self, difficulty=None):
+    def __init__(self, difficulty=-1):
         super(RandomDotMotionDiscriminationContent, self).__init__(bg_color=[0.0, 0.0, 0.0, 1.0])
         
         self.difficulty = difficulty
-        assert (difficulty is None) or (difficulty < self.difficulty_range)
+        assert (difficulty >= -1) and (difficulty < self.difficulty_range)
 
     def _init(self):
         start_marker_texture = self._load_texture('start_marker0.png')
@@ -180,7 +180,7 @@ class RandomDotMotionDiscriminationContent(BaseContent):
         self.current_direction_index = np.random.randint(0, 8)
         
         # Choose coherent rate
-        if self.difficulty == None:        
+        if self.difficulty == -1:
             coherent_rate_index = np.random.randint(0, len(COHERENT_RATES))
         else:
             coherent_rate_index = self.difficulty
