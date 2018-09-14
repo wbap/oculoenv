@@ -7,7 +7,7 @@ import unittest
 import numpy as np
 
 from oculoenv.contents.odd_one_out_content import OddOneOutSignSprite, OddOneOutContent, \
-  ODD_TYPE_COLOR, ODD_TYPE_SHAPE, ODD_TYPE_ORIENTATION, ODD_TYPE_MOTION
+  ODD_TYPE_COLOR, ODD_TYPE_SHAPE, ODD_TYPE_ORIENTATION, ODD_TYPE_MOTION, GRID_DIVISIONS
 
 
 class TestOddOneOutSignSprite(unittest.TestCase):
@@ -119,6 +119,16 @@ class TestOddOneOutContent(unittest.TestCase):
         self.assertEqual(OddOneOutContent.difficulty_range, 0)
         content = OddOneOutContent(difficulty=-1)
 
+
+    def test_choose_odd_index(self):
+        content = OddOneOutContent()
+
+        for grid_division in GRID_DIVISIONS:
+            avoid_index = (grid_division * grid_division - 1) // 2
+            for i in range(1000):
+                odd_index = content._choose_odd_index(grid_division)
+                self.assertNotEqual(odd_index, avoid_index)
+                self.assertLess(odd_index, grid_division * grid_division)
 
 if __name__ == '__main__':
     unittest.main()
