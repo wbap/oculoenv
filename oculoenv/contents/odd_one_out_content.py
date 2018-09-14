@@ -162,6 +162,18 @@ class OddOneOutContent(BaseContent):
         self.phase = PHASE_START
         self.reaction_step = 0
 
+    def _choose_odd_index(self, grid_division):
+        """ Choose target odd sprite index.
+        Center sprite is not choosen, because if it is choosen then it will be hit
+        just after the phase changes to find phase.
+        """
+        avoid_index = (grid_division * grid_division - 1) // 2
+        indices = list(range(grid_division * grid_division))
+        indices.remove(avoid_index)
+        random.shuffle(indices)
+        odd_index = indices[0]
+        return odd_index
+
     def _prepare_sign_sprites(self):
         odd_type = np.random.randint(0, ODD_TYPE_MAX)
 
@@ -174,7 +186,7 @@ class OddOneOutContent(BaseContent):
         self.sign_sprites = []
 
         count = 0
-        odd_index = np.random.randint(grid_division * grid_division)
+        odd_index = self._choose_odd_index(grid_division)
 
         for i in range(grid_division):
             for j in range(grid_division):
