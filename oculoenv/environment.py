@@ -1,19 +1,18 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 
 import sys
-import numpy as np
-
-import pyglet
-from pyglet.gl import *
 from ctypes import POINTER
 
-from .graphics import MultiSampleFrameBuffer, FrameBuffer
-from .objmesh import ObjMesh
-from .utils import clamp, rad2deg, deg2rad
+import gym
+import numpy as np
+import pyglet
+from pyglet.gl import *
+
 from .geom import Matrix4
+from .graphics import FrameBuffer, MultiSampleFrameBuffer
+from .objmesh import ObjMesh
+from .utils import clamp, deg2rad, rad2deg
 
 BG_COLOR = np.array([0.45, 0.82, 1.0, 1.0])
 WHITE_COLOR = np.array([1.0, 1.0, 1.0])
@@ -137,6 +136,9 @@ class Camera(object):
 class Environment(object):
     """ Task Environmenet class. """
 
+    # initialize metadata for gym interface
+    metadata = {'render.modes': ['human', 'ansi']}
+
     def __init__(self, content, off_buffer_width=128, on_buffer_width=640):
         """ Oculomotor task environment class.
 
@@ -146,6 +148,14 @@ class Environment(object):
           on_buffer_width: (int) pixel width and height size of display window.
         """
         
+        # initialize spaces for gym interface
+        ACTION_LOW = np.array([-np.pi, -np.pi])
+        ACTION_HIGH = np.array([np.pi, np.pi])
+        self.action_space = gym.spaces.Box(low=-ACTION_LOW, high=ACTION_HIGH, shape=(2,))
+        self.observation_space = gym.spaces.Box(low=0,high=255,shape=(off_buffer_width, off_buffer_width, 3), dtype=np.uint8)
+        self.reward_range = [-100., 100.]
+        self.spec = None
+
         # Invisible window to render into (shadow OpenGL context)
         self.shadow_window = pyglet.window.Window(
             width=1, height=1, visible=False)
@@ -180,14 +190,11 @@ class Environment(object):
         # Change upside-down
         image = np.flip(image, 0)
         
-        # Current absolute camera angle
-        angle = (self.camera.cur_angle_h, self.camera.cur_angle_v)
+        # flatten observation for BriCA port
+        flatImage = np.ravel(image).astype(float)
+        flatImage1 = np.append(flatImage, self.camera.cur_angle_h)
+        obs = np.append(flatImage1, self.camera.cur_angle_v)
         
-        obs = {
-            "screen":image,
-            "angle":angle
-        }
-
         return obs
 
     def reset(self):

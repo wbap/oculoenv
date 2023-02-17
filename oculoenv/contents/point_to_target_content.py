@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
+
+import random
 
 import numpy as np
-import random
 
 from .base_content import BaseContent, ContentSprite
 
@@ -45,7 +44,7 @@ class Quadrant(object):
 
 
 class PointToTargetContent(BaseContent):
-    difficulty_range = 3
+    difficulty_range = 4
     
     def __init__(self, difficulty=-1):
         self.difficulty = difficulty
@@ -119,10 +118,8 @@ class PointToTargetContent(BaseContent):
         info = {}
 
         if self.phase == PHASE_START:
-            if self.start_sprite.contains(local_focus_pos):
-                # When hitting the red plus cursor
-                self._move_to_target_phase()
-                need_render = True
+            self._move_to_target_phase()
+            need_render = True
         else:
             self.reaction_step += 1
             if self.target_sprite.contains(local_focus_pos):
@@ -169,6 +166,9 @@ class PointToTargetContent(BaseContent):
             else:
                 self.target_sprite.set_width(TARGET_WIDTH_SMALL)
                 self.lure_sprite.set_width(TARGET_WIDTH_SMALL)
+        elif current_difficulty == 3:
+            self.target_sprite.set_width(TARGET_WIDTH_LARGE)
+            self.lure_sprite.set_width(0)
         else:
             # Target is small, lure is large
             self.target_sprite.set_width(TARGET_WIDTH_SMALL)
