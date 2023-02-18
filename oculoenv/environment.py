@@ -139,7 +139,7 @@ class Environment(object):
     # initialize metadata for gym interface
     metadata = {'render.modes': ['human', 'ansi']}
 
-    def __init__(self, content, off_buffer_width=128, on_buffer_width=640):
+    def __init__(self, content, off_buffer_width=128, on_buffer_width=640, usebrica1=False):
         """ Oculomotor task environment class.
 
         Arguments:
@@ -149,6 +149,7 @@ class Environment(object):
         """
         
         # initialize spaces for gym interface
+        self.usebrica1 = usebrica1
         ACTION_LOW = np.array([-np.pi, -np.pi])
         ACTION_HIGH = np.array([np.pi, np.pi])
         self.action_space = gym.spaces.Box(low=-ACTION_LOW, high=ACTION_HIGH, shape=(2,))
@@ -190,6 +191,23 @@ class Environment(object):
         # Change upside-down
         image = np.flip(image, 0)
         
+        # Current absolute camera angle
+        angle = (self.camera.cur_angle_h, self.camera.cur_angle_v)
+        
+        obs = {
+            "screen":image,
+            "angle":angle
+        }
+
+        return obs
+
+    def _get_observation_for_brica1(self):
+        # Get rendered image
+        image = self._render_offscreen()
+
+        # Change upside-down
+        image = np.flip(image, 0)
+        
         # flatten observation for BriCA port
         flatImage = np.ravel(image).astype(float)
         flatImage1 = np.append(flatImage, self.camera.cur_angle_h)
@@ -208,7 +226,8 @@ class Environment(object):
         
         self.content.reset()
         self.camera.reset()
-        return self._get_observation()
+        obs = self._get_observation_for_brica1() if self.usebrica1 else self._get_observation()
+        return obs
 
     def _calc_local_focus_pos(self, camera_forward_v):
         """ Calculate local coordinate of view focus point on the content panel. """
@@ -246,7 +265,7 @@ class Environment(object):
         local_focus_pos = self._calc_local_focus_pos(camera_forward_v)
         reward, done, info = self.content.step(local_focus_pos)
 
-        obs = self._get_observation()
+        obs = self._get_observation_for_brica1() if self.usebrica1 else self._get_observation()
 
         return obs, reward, done, info
 
